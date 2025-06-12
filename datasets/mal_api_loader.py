@@ -1,6 +1,6 @@
 import os
 from sklearn.model_selection import train_test_split
-from utils.text_preprocessing import MalAPITextDataset, build_vocab
+from datasets.text_preprocessing import MalAPITextDataset, build_vocab
 
 def load_mal_api_data(text_file, labels_file, test_size=0.2, random_state=42):
     # 读取文本和标签
