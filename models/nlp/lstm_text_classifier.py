@@ -31,16 +31,24 @@ class LSTMTextClassifier(nn.Module):
         # Dropout 层，防止过拟合
         self.dropout = nn.Dropout(0.5)
 
-    def forward(self, x):
+    def embed(self, x):
         """
-        前向传播函数
-        参数：
-        - x: 输入文本的索引表示，形状为 [batch_size, max_len]
+        嵌入层前向传播
+        输入：
+        - x: [batch_size, max_len] 的 token 索引张量
         返回：
-        - 输出层的分类结果
+        - embedded: [batch_size, max_len, embedding_dim] 的嵌入表示
         """
-        # 嵌入层，获取词向量
-        embedded = self.embedding(x)
+        return self.embedding(x)
+
+    def forward(self, embedded):
+        """
+        从嵌入开始的前向传播（跳过嵌入层）
+        输入：
+        - embedded: [batch_size, max_len, embedding_dim] 的嵌入表示
+        返回：
+        - 分类结果 logits: [batch_size, output_dim]
+        """
         # LSTM 层
         lstm_out, (hidden, cell) = self.lstm(embedded)
         # 获取 LSTM 最后一层的隐状态（最后一个时间步的输出）
@@ -52,10 +60,7 @@ class LSTMTextClassifier(nn.Module):
 
         return output
 
-    # 跳过嵌入层的前向传播，用于对抗攻击部分
-    def forward_from_embedding(self, embedded):
-        lstm_out, (hidden, cell) = self.lstm(embedded)
-        hidden_out = hidden[-1]
-        dropped_out = self.dropout(hidden_out)
-        output = self.fc(dropped_out)
-        return output
+
+# 训练或者测试的时候只需要（如果不需要第一部，可以直接使用第二步）
+# embed = model.embed(x)  # 第一步：将 token 索引转换成嵌入表示
+# y_pred = model(embed)   # 第二步：输入嵌入到模型中，得到分类结果
