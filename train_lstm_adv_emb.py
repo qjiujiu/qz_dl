@@ -5,29 +5,9 @@ from torch.utils.data import TensorDataset, DataLoader, random_split
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from utils.logger import logger_initiate
 from tqdm import tqdm
-import yaml
-import os
+from utils.get_config import load_config
+from datasets.adv_emb_loader import load_adversarial_dataset
 
-def load_config(config_path):
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-    return config
-
-def load_adversarial_dataset(emb_path, train_ratio=0.8):
-    """
-    从给定的对抗样本缓存中加载数据并划分训练与测试集
-    """
-    if not os.path.exists(emb_path):
-        raise FileNotFoundError(f"缓存文件 {emb_path} 不存在")
-
-    emb_tensor, label_tensor = torch.load(emb_path)
-    dataset = TensorDataset(emb_tensor, label_tensor)
-
-    train_size = int(train_ratio * len(dataset))
-    test_size = len(dataset) - train_size
-
-    train_dataset, test_dataset = random_split(dataset, [train_size, test_size], generator=torch.Generator().manual_seed(42))
-    return train_dataset, test_dataset
 
 def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -47,13 +27,11 @@ def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
     logger = logger_initiate(log_level=config.get('log_level', 'INFO'), is_console=True, is_file=True, is_colorful=True)
 
     # 加载对抗样本数据
-    train_dataset, test_dataset = load_adversarial_dataset(adv_cache_path)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size)
+    train_loader, test_loader = load_adversarial_dataset(adv_cache_path,batch_size=batch_size)
 
     # 构建模型（不使用 embedding 层）
     model = LSTMTextClassifier(
-        vocab_size=0,  # placeholder
+        vocab_size=278,  # 词表大小
         embedding_dim=embedding_dim,
         hidden_dim=hidden_dim,
         output_dim=output_dim,
@@ -73,7 +51,7 @@ def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
             for inputs, labels in tepoch:
                 inputs, labels = inputs.to(device), labels.to(device)
                 optimizer.zero_grad()
-                outputs = model.forward_from_embedding(inputs)
+                outputs = model.forward(inputs)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
@@ -88,7 +66,7 @@ def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
         with torch.no_grad():
             for inputs, labels in test_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model.forward_from_embedding(inputs)
+                outputs = model.forward(inputs)
                 _, preds = torch.max(outputs, 1)
                 total += labels.size(0)
                 correct += (preds == labels).sum().item()
@@ -102,13 +80,13 @@ def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
 
 if __name__ == "__main__":
     # 使用 FGSM 训练示例：
-    config_path = "config/lstm_fgsm_config.yaml"  # 改为你要使用的 config 路径
-    adv_data_path = "data/malapi2019/emb-feature/advexam-fgsm/fgsm.pt"  # 对抗样本路径
-    config = load_config(config_path)
-    train_model_from_adversarial(config, adv_data_path, tag='FGSM')  # 'FGSM' 可改为 'PGD'
+    # config_path = "config/lstm_fgsm_config.yaml"  # 改为你要使用的 config 路径
+    # adv_data_path = "data/malapi2019/emb-feature/advexam-fgsm/fgsm.pt"  # 对抗样本路径
+    # config = load_config(config_path)
+    # train_model_from_adversarial(config, adv_data_path, tag='FGSM')  # 'FGSM' 可改为 'PGD'
 
     # 使用 PGD 训练示例：
-    # config_path = "config/lstm_pgd_config.yaml"
-    # adv_data_path = "data/malapi2019/emb-feature/advexam-pgd/pgd.pt"
-    # config = load_config(config_path)
-    # train_model_from_adversarial(config, adv_data_path, tag='PGD')  # 'FGSM' 可改为 'PGD'
+    config_path = "config/lstm_pgd_config.yaml"
+    adv_data_path = "data/malapi2019/emb-feature/advexam-pgd/pgd.pt"
+    config = load_config(config_path)
+    train_model_from_adversarial(config, adv_data_path, tag='PGD')  # 'FGSM' 可改为 'PGD'

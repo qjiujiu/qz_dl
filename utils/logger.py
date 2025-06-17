@@ -2,8 +2,6 @@ import os
 import time
 import logging
 import colorlog
-
-
 from types import MethodType
 from typing import TypeVar
 
