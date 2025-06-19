@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import TensorDataset, DataLoader, random_split
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from utils.logger import logger_initiate
 from tqdm import tqdm
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     # config = load_config(config_path)
     # train_model_from_adversarial(config, adv_data_path, tag='FGSM')  # 'FGSM' 可改为 'PGD'
 
-    # 使用 PGD 训练示例：
+    # # 使用 PGD 训练示例：
     config_path = "config/lstm_pgd_config.yaml"
     adv_data_path = "data/malapi2019/emb-feature/advexam-pgd/pgd.pt"
     config = load_config(config_path)

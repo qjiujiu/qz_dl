@@ -1,6 +1,5 @@
+# 用干净样本测试 FGSM对抗训练模型，PGD对抗训练模型，以及干净模型的性能
 import torch
-import torch.nn as nn
-from torch.utils.data import TensorDataset, DataLoader, random_split
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from utils.logger import logger_initiate
 from tqdm import tqdm
@@ -51,13 +50,13 @@ def test_on_clean_embedding(config, tag="Adv"):
 
 if __name__ == "__main__":
     # 测试 FGSM 对抗模型
-    # config_fgsm = load_config("config/lstm_fgsm_config.yaml")
-    # test_on_clean_embedding(config_fgsm, tag="FGSM")
+    config_fgsm = load_config("config/lstm_fgsm_config.yaml")
+    test_on_clean_embedding(config_fgsm, tag="FGSM")
 
     # 测试 PGD 对抗模型
-    # config_pgd = load_config("config/lstm_pgd_config.yaml")
-    # test_on_clean_embedding(config_pgd, tag="PGD")
+    config_pgd = load_config("config/lstm_pgd_config.yaml")
+    test_on_clean_embedding(config_pgd, tag="PGD")
 
     # 测试 干净 模型
     config_clean = load_config("config/lstm_config.yaml")
-    test_on_clean_embedding(config_clean, tag="clean")
+    test_on_clean_embedding(config_clean, tag="Clean")

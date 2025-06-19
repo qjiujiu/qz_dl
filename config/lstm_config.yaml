@@ -19,4 +19,3 @@ train_labels: "data/malapi2019/labels.txt"
 
 # 模型保存路径
 checkpoint_path: "checkpoints/lstm.pth"
-fgsm_checkpoint_path: 'checkpoints/lstm_adv_fgsm.pth' 
