@@ -1,16 +1,10 @@
 import torch
-import torch.nn as nn
 import matplotlib.pyplot as plt
-import yaml
-
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from datasets.clean_emb_loader import load_clean_embedding_dataset
 from tqdm import tqdm
 from datasets.adv_emb_loader import load_adversarial_dataset
-
-def load_config(path):
-    with open(path, 'r') as f:
-        return yaml.safe_load(f)
+from utils.get_config import load_config
 
 
 def create_model(config):
@@ -36,114 +30,172 @@ def evaluate(model, dataloader, device):
     return correct / total
 
 
-def interpolate_models_and_evaluate(config, model_path_a, model_path_b, test_loader, device):
+def interpolate_models_and_evaluate(config, model_path_a, model_path_b, test_loader, device, interpolate_keys=None):
     model_a = create_model(config).to(device)
     model_b = create_model(config).to(device)
 
     model_a.load_state_dict(torch.load(model_path_a, map_location=device), strict=False)
     model_b.load_state_dict(torch.load(model_path_b, map_location=device), strict=False)
 
-    # w_values = [round(w, 1) for w in torch.arange(0.1, 1.0, 0.1).tolist()] # 步长 0.1
-    w_values = [round(w, 2) for w in torch.arange(0.01, 1.0, 0.01).tolist()] # 步长 0.01
+    # w_values = [round(w, 1) for w in torch.arange(0.1, 1.0, 0.1).tolist()]
+    w_values = [round(w, 2) for w in torch.arange(0.01, 1.0, 0.01).tolist()]
     accuracies = []
-    
-    for w in tqdm(w_values, desc="Interpolating and Evaluating"):  
+
+    state_dict_a = model_a.state_dict()
+    state_dict_b = model_b.state_dict()
+
+    if interpolate_keys is None:
+        interpolate_keys = state_dict_a.keys()  # 默认插值所有参数
+
+    for w in tqdm(w_values, desc="Interpolating and Evaluating"):
         mixed_model = create_model(config).to(device)
-        mixed_state = {
-            key: w * model_a.state_dict()[key] + (1 - w) * model_b.state_dict()[key]
-            for key in model_a.state_dict()
-        }
+        mixed_state = {}
+
+        for key in state_dict_a:
+            if key in interpolate_keys:
+                mixed_state[key] = w * state_dict_a[key] + (1 - w) * state_dict_b[key]
+            else:
+                mixed_state[key] = state_dict_a[key]  # 或者 state_dict_b[key]
+
         mixed_model.load_state_dict(mixed_state, strict=False)
         acc = evaluate(mixed_model, test_loader, device)
         accuracies.append(acc)
 
     return w_values, accuracies
 
-
-def plot_interpolation_curve(w_values_1, accuracies_1, w_values_2, accuracies_2, save_path, ylabel, title):
-    plt.figure(figsize=(10, 6))
-
-    # 绘制第一条线 (model_a + model_b 插值)
-    plt.plot(w_values_1, accuracies_1, marker='.', markersize=3, linewidth=1, label="Clean Test Data")
-
-    # 绘制第二条线 (可能是另一模型的插值)
-    plt.plot(w_values_2, accuracies_2, marker='x', markersize=4, linewidth=1, label="Adv Test Data")
-
-    # 添加标签、标题、网格等
-    plt.xlabel("Weight w in wa + (1-w)b")
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.xticks(ticks=w_values_1[::10])  # 每隔0.1显示一次
-    plt.grid(True, linestyle='--', alpha=0.6)
-
-    # 添加图例
-    plt.legend()
-
-    # 保存图像
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
-    plt.close()
-
-def run_interpolation_experiment(config_path, model_path_a, model_path_b, test_data_path1, test_data_path2, save_path, ylabel, title):
+def run_layerwise_interpolation_two_datasets(
+    config_path,
+    model_path_a,
+    model_path_b,
+    test_loaders: dict,  # {"clean": loader1, "adv": loader2}
+    save_path: str
+):
     config = load_config(config_path)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    _, test_loader1 = load_clean_embedding_dataset(
-        cache_path=test_data_path1,
-        batch_size=config['batch_size']
-    )
+    # 所有参数名
+    all_keys = [
+        "embedding.weight",
+        "lstm.weight_ih_l0", "lstm.weight_hh_l0",
+        "lstm.bias_ih_l0", "lstm.bias_hh_l0",
+        "fc.weight", "fc.bias"
+    ]
 
-    _, test_loader2 = load_adversarial_dataset(
-        emb_path=test_data_path2,
-        batch_size=config['batch_size']
-    )
+    groups = {
+        "embedding": ["embedding.weight"],
+        "lstm": ["lstm.weight_ih_l0", "lstm.weight_hh_l0", "lstm.bias_ih_l0", "lstm.bias_hh_l0"],
+        "fc": ["fc.weight", "fc.bias"]
+    }
 
-    # 计算第一条线 (model_a 和 model_b 之间的插值)
-    w_values_1, accuracies_1 = interpolate_models_and_evaluate(
-        config, model_path_a, model_path_b, test_loader1, device
-    )
+    combinations = [
+        ("no_embedding", groups["lstm"] + groups["fc"]),
+        ("no_lstm", groups["embedding"] + groups["fc"]),
+        ("no_fc", groups["embedding"] + groups["lstm"]),
+        ("all", all_keys)
+    ]
 
-    # 计算第二条线 (model_c 和 model_d 之间的插值)
-    w_values_2, accuracies_2 = interpolate_models_and_evaluate(
-        config, model_path_a, model_path_b, test_loader2, device
-    )
+    plt.figure(figsize=(10, 6))
+    all_w_values = None
 
-    # 绘制两条线
-    plot_interpolation_curve(w_values_1, accuracies_1, w_values_2, accuracies_2, save_path, ylabel, title)
+    # 颜色按组合分配
+    colors = {
+        "no_embedding": "#6EC1E4",  # 清新蓝
+        "no_lstm": "#8CD17D",       # 薄荷绿
+        "no_fc": "#F6C85F",         # 柔橙黄
+        "all": "#D4A6C8"            # 淡紫色
+    }
 
+    for combo_name, interpolate_keys in combinations:
+        color = colors[combo_name]
+        show_label = True  # 只在第一条线显示 legend
 
+        for ds_name, loader in test_loaders.items():
+            w_values, accs = interpolate_models_and_evaluate(
+                config, model_path_a, model_path_b, loader, device, interpolate_keys
+            )
+
+            if all_w_values is None:
+                all_w_values = w_values
+
+            # 主线条
+            plt.plot(
+                w_values,
+                accs,
+                color=color,
+                marker='.',
+                markersize=3,
+                linewidth=1,
+                alpha=0.85,
+                label=combo_name if show_label else None
+            )
+
+            plt.annotate(
+                ds_name,
+                xy=(w_values[-1], accs[-1]),
+                xytext=(5, 0),  # x方向偏移 5px
+                textcoords="offset points",
+                fontsize=8,
+                color=color,
+                va="center"
+            )
+
+            # 在每条线尾部添加文字标注（clean / adv）
+            plt.text(
+                w_values[-1] + 0.01, accs[-1],  # 稍微偏右一点
+                ds_name,
+                fontsize=8,
+                color=color,
+                verticalalignment='center'
+            )
+
+            show_label = False  # 仅第一条线使用 label（避免图例重复）
+
+    # 图设置
+    plt.xlabel("Weight w in wa + (1-w)b")
+    plt.ylabel("Accuracy")
+    plt.title("Interpolation Across Layer Combinations (Clean vs Adv)")
+
+    if len(all_w_values) <= 10:
+        plt.xticks(ticks=all_w_values)
+    else:
+        plt.xticks(ticks=all_w_values[::max(1, len(all_w_values)//10)])
+
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(title="Weight Combination", fontsize=9)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
 
 
 
 if __name__ == "__main__":
 
-    # # 干净模型+fgsm对抗模型
-    # model_path_a = "checkpoints/lstm.pth"
-    # model_path_b = "checkpoints/lstm_adv_fgsm.pth"  
-    # # 干净embedding特征作为输入
-    # test_data_path1 = "data/malapi2019/emb-feature/clean-exam/clean_examples.pt"
-    # # fgsm对抗样本embedding特征作为输入
-    # test_data_path2 = "data/malapi2019/emb-feature/advexam-fgsm/fgsm.pt"
-
-    # config_path = "config/clean_adv_config.yaml"                               # 用在干净模型+fgsm对抗模型的参数文件
-    # save_path = "figure/comparison_clean_fgsm-trained_model.png"
-    # ylabel = "Accuracy"
-    # title = "Comparison between Clean and FGSM-trained Models"
-
-    # run_interpolation_experiment(config_path, model_path_a, model_path_b, test_data_path1, test_data_path2, save_path, ylabel, title)
-
-
-    # 干净模型+pgd对抗模型
+    config_path = "config/clean_adv_config.yaml"
     model_path_a = "checkpoints/lstm.pth"
-    model_path_b = "checkpoints/lstm_adv_pgd.pth"  
-    # 干净embedding特征作为输入
-    test_data_path1 = "data/malapi2019/emb-feature/clean-exam/clean_examples.pt"
-    # pgd对抗样本embedding特征作为输入
-    test_data_path2 = "data/malapi2019/emb-feature/advexam-pgd/pgd.pt"
+    model_path_b = "checkpoints/lstm_adv_fgsm.pth"  # or lstm_adv_pgd.pth
+    save_path = "figure/layerwise_interp.png"
 
-    config_path = "config/clean_adv_config.yaml"                            # 用在干净模型+pgd对抗模型的参数文件
-    save_path = "figure/comparison_clean_pgd-trained_model.png"
-    ylabel = "Accuracy"
-    title = "Comparison between Clean and PGD-trained Models"
+    config = load_config(config_path)
 
-    run_interpolation_experiment(config_path, model_path_a, model_path_b, test_data_path1, test_data_path2, save_path, ylabel, title)
+    _, clean_loader = load_clean_embedding_dataset(
+        cache_path="data/malapi2019/emb-feature/clean-exam/clean_examples.pt",
+        batch_size=config["batch_size"]
+    )
+
+    _, adv_loader = load_adversarial_dataset(
+        emb_path="data/malapi2019/emb-feature/advexam-fgsm/fgsm.pt",  # or pgd.pt
+        batch_size=config["batch_size"]
+    )
+
+    test_loaders = {
+        "clean": clean_loader,
+        "adv": adv_loader
+    }
+
+    run_layerwise_interpolation_two_datasets(
+        config_path,
+        model_path_a,
+        model_path_b,
+        test_loaders,
+        save_path
+    )
