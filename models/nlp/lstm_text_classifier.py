@@ -1,7 +1,5 @@
 # models/nlp/lstm_text_classifier.py
-import torch
 import torch.nn as nn
-import torch.optim as optim
 
 class LSTMTextClassifier(nn.Module):
     def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, max_len, pretrained_embeddings=None):

@@ -19,7 +19,7 @@ def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
     batch_size = config['batch_size']
     epochs = config['epochs']
     learning_rate = config['learning_rate']
-    dropout_prob = config['dropout_prob']
+    vocab_size = config['vocab_size']
     checkpoint_path = config['checkpoint_path']
 
     # 日志器
@@ -30,7 +30,7 @@ def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
 
     # 构建模型（不使用 embedding 层）
     model = LSTMTextClassifier(
-        vocab_size=278,  # 词表大小
+        vocab_size=vocab_size,  # 词表大小
         embedding_dim=embedding_dim,
         hidden_dim=hidden_dim,
         output_dim=output_dim,
@@ -51,6 +51,7 @@ def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
                 inputs, labels = inputs.to(device), labels.to(device)
                 optimizer.zero_grad()
                 outputs = model.forward(inputs)
+                logger.error(f"inputs = {inputs.shape}, outputs = {outputs.shape}, labels = {labels.shape}")
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
@@ -85,7 +86,13 @@ if __name__ == "__main__":
     # train_model_from_adversarial(config, adv_data_path, tag='FGSM')  # 'FGSM' 可改为 'PGD'
 
     # # 使用 PGD 训练示例：
-    config_path = "config/lstm_pgd_config.yaml"
-    adv_data_path = "data/malapi2019/emb-feature/advexam-pgd/pgd.pt"
+    # config_path = "config/lstm_pgd_config.yaml"
+    # adv_data_path = "data/malapi2019/emb-feature/advexam-pgd/pgd.pt"
+    # config = load_config(config_path)
+    # train_model_from_adversarial(config, adv_data_path, tag='PGD')  # 'FGSM' 可改为 'PGD'
+
+    # 使用 MiniLM生成的干净Embedding样本 作为输入，训练 原LSTM 模型
+    config_path = "config/lstm_miniLM_emb.yaml"
+    emb_data_path = "data/malapi2019/emb-MiniLM-L6/clean_examples.pt"
     config = load_config(config_path)
-    train_model_from_adversarial(config, adv_data_path, tag='PGD')  # 'FGSM' 可改为 'PGD'
+    train_model_from_adversarial(config, emb_data_path, tag='miniLM-clean')

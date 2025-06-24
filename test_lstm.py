@@ -42,6 +42,7 @@ def test_model(config):
         with tqdm(test_loader, desc="Evaluating", unit="batch") as tepoch:
             for texts, labels in tepoch:
                 x = model.embed(texts)
+                print(x.shape)
                 outputs = model(x)
                 _, predicted = torch.max(outputs, 1)
                 total += labels.size(0)

@@ -21,3 +21,10 @@ nvidia-nvtx-cu11==11.8.86
 numpy==1.23.5
 scikit-learn==1.2.2
 # scipy==1.10.1
+
+hf-xet-1.1.4 
+huggingface-hub-0.33.0 
+safetensors-0.5.3 
+sentence-transformers-4.1.0 
+tokenizers-0.21.1 
+transformers-4.52.4
