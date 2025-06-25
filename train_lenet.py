@@ -4,7 +4,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from models.cv.lenet import LeNet
-from utils.logger import logger_initiate
+from config.logger import logger_initiate
 from tqdm import tqdm
 import yaml
 

@@ -22,6 +22,9 @@ class CommonCfgParams:
             self.device = "cuda"
         else:
             self.device = "cpu"
+    
+    def as_dict(self):
+        return asdict(self)
 
 
 @dataclass

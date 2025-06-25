@@ -2,10 +2,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
-from utils.logger import logger_initiate
+from config.logger import logger_initiate, logging
 from tqdm import tqdm
 from utils.get_config import load_config
 from datasets.adv_emb_loader import load_adversarial_dataset
+
+# 日志器
+logger = logger_initiate(log_level=logging.INFO, is_console=True, is_file=True, is_colorful=True)
 
 
 def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
@@ -22,8 +25,6 @@ def train_model_from_adversarial(config, adv_cache_path, tag='ADV'):
     vocab_size = config['vocab_size']
     checkpoint_path = config['checkpoint_path']
 
-    # 日志器
-    logger = logger_initiate(log_level=config.get('log_level', 'INFO'), is_console=True, is_file=True, is_colorful=True)
 
     # 加载对抗样本数据
     train_loader, test_loader = load_adversarial_dataset(adv_cache_path,batch_size=batch_size)

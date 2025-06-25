@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 import numpy as np
 
-from utils import logger 
+from config import logger 
 from collections import namedtuple
 
 # 准确率、精确率、召回率、F1 分数、混淆矩阵

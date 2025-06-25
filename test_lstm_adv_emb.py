@@ -3,7 +3,7 @@ import torch.nn as nn
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from utils.get_config import load_config
 from datasets.adv_emb_loader import load_adversarial_dataset
-from utils.logger import logger_initiate
+from config.logger import logger_initiate
 
 
 def evaluate_model_on_adversarial(config, adv_test_path):

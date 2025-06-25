@@ -1,7 +1,7 @@
 # 用干净样本测试 FGSM对抗训练模型，PGD对抗训练模型，以及干净模型的性能
 import torch
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
-from utils.logger import logger_initiate
+from config.logger import logger_initiate
 from tqdm import tqdm
 import os
 from utils.get_config import load_config
