@@ -1,6 +1,7 @@
 import argparse
 from dataclasses import fields, is_dataclass
-from config.params_parser import (
+from config.params_parser.params_template import (
+    CommonCfgParams,
     CvCfgParams,
     NlpCfgParams 
 )
@@ -14,14 +15,15 @@ class ArgsParser:
         parser = argparse.ArgumentParser(description="深度学习项目通用参数解析")
 
         # --- 公共训练参数 ---
-        parser.add_argument("--batch-size", type=int, default=1024, help="批处理大小")
-        parser.add_argument("--epochs", type=int, default=10, help="训练轮数")
+        parser.add_argument("--batch-size", "-bs", type=int, default=1024, help="批处理大小")
+        parser.add_argument("--dropout-prob", "-drop", type=float, default=0.5, help="随机失活的概率")
+        parser.add_argument("--epochs", "-ep", type=int, default=10, help="训练轮数")
         parser.add_argument("--lr", type=float, default=0.01, help="学习率")
         parser.add_argument("--checkpoint-path", type=str, help="模型保存路径")
         parser.add_argument("--device", type=str, default="cuda", help="运行设备，默认 cuda，若不可用则自动转为 cpu 模式")
 
         # --- NLP 专用参数 ---
-        parser.add_argument("--vocab_size", type=int, help="词表大小")
+        parser.add_argument("--vocab-size", type=int, help="词表大小")
         parser.add_argument("--embedding-dim", type=int, help="词向量维度")
         parser.add_argument("--hidden-dim", type=int, help="隐藏层维度")
         parser.add_argument("--output-dim", type=int, help="输出类别数")
@@ -32,7 +34,7 @@ class ArgsParser:
         return vars(args)
 
     @staticmethod
-    def create_config(config_class, **kwargs):
+    def create_config(config_class, **kwargs) -> CommonCfgParams:
         """ 通过 kwargs 构造 config_class 实例，忽略未定义的字段
         """
         if not is_dataclass(config_class):
