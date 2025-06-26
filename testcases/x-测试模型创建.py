@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
-from config.parser import NlpCfgParams
+from config.params_parser.parser import NlpCfgParams
 from config.logger import logger
 
 logger.is_debug(True)

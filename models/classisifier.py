@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
 
 import os
 import uuid, json
@@ -10,7 +9,8 @@ from datetime import datetime
 
 from abc import ABC, abstractmethod
 from config.logger import logger
-from config.params_parser import CommonCfgParams
+from config.params_parser.params_template import CommonCfgParams
+from config.metrics.metrics_res_template import ClassificationResult
 
 from sklearn.metrics import (
     accuracy_score, 
@@ -21,7 +21,7 @@ from sklearn.metrics import (
 
 
 class ClassifierBaseModel(ABC, nn.Module):
-    def __init__(self, log_dir="logs", *args, **kwargs):
+    def __init__(self,  *args, **kwargs):
         """ 初始化 BaseModel 类
 
         参数：
@@ -34,9 +34,6 @@ class ClassifierBaseModel(ABC, nn.Module):
         self.loss_fn = None
         self.optimizer = None
         self.device = None
-        self.log_dir = log_dir
-
-        os.makedirs(log_dir, exist_ok=True)
 
         # 初始化历史记录，并且记录训练配置
         self.history = {
@@ -60,20 +57,33 @@ class ClassifierBaseModel(ABC, nn.Module):
             'config': self.ctx.as_dict(),  
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        model_summary = str(self)  # 可选：输出模型结构
-        # TODO 增加一个权重缓存的位置
+        
+
+        # 获取时间戳 + 模型名称，以此构建存储路径
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        checkpoint_dir = os.path.join('checkpoints', date_str, self.__class__.__name__)
+
+        os.makedirs(checkpoint_dir, exist_ok=True)
+
         log_data = {
             "log_id": self.log_id,
-            "history": self.history,
-            "config": config,
-            "model_summary": model_summary
+            "history": self.history,            # 训练过程的记录
+            "config": config,                   # 超参数设置
+            "model_summary": str(self)          # 模型结
         }
 
-        log_path = os.path.join(self.log_dir, f"{self.log_id}.json")
+        # 记录训练过程的超参数设置信息
+        log_path = os.path.join(checkpoint_dir, f"{self.log_id}.json")
         with open(log_path, 'w', encoding='utf-8') as f:
-            json.dump(log_data, f, indent=4, ensure_ascii=False)
+            json.dump(log_data, f, indent=4, ensure_ascii=False)     
+        
+        # 存档模型权重
+        model_weight_path = os.path.join(checkpoint_dir, f"{self.log_id}_weights.pth")
+        torch.save(self.state_dict(), model_weight_path)  # 保存模型的权重
 
+        # 打印日志
         logger.debug(f"Training log saved to: {log_path}")
+        logger.debug(f"Model weights saved to: {model_weight_path}")
 
 
     @abstractmethod
@@ -134,22 +144,15 @@ class ClassifierBaseModel(ABC, nn.Module):
         precision = precision_score(all_reals, all_preds, average='macro', zero_division=0)
         recall = recall_score(all_reals, all_preds, average='macro', zero_division=0)
         f1 = f1_score(all_reals, all_preds, average='macro', zero_division=0)
-
-        metrics = {
-            'accuracy': accuracy,
-            'precision': precision,
-            'recall': recall,
-            'f1_score': f1
-        }
-
-        return metrics
+        
+        return ClassificationResult(accuracy=accuracy, precision=precision, recall=recall, f1=f1)
     
 
     def train_one_epoch(self, dataloader, val_loader=None, **kwargs):
         """ 训练一个 epoch，这个方法包含默认版本，子类可以重写，也可以直接复用
         """
         self.train() 
-        total_loss, metrics = 0, {}
+        total_loss, metrics = 0, ClassificationResult()
         with tqdm(dataloader, desc="Training", unit="batch") as tepoch:
             for batch in tepoch:
                 loss = self.train_one_step(batch, **kwargs)
@@ -175,9 +178,13 @@ class ClassifierBaseModel(ABC, nn.Module):
         logger.debug(f"当前轮训练log-id: {self.log_id} 已开启...")
 
         for epoch in range(epochs):
+            # 训练单个 epoch
+            print(f"Epoch [{epoch+1}/{epochs}]: ")
             avg_loss, metrics = self.train_one_epoch(loader, val_loader, **kwargs)
-            print(f'Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}')
+            
+            # 打印当前轮的训练结果
+            print(f"Loss: {avg_loss:.4f}. {metrics}")
             self.history['train_loss'].append(avg_loss)
-            self.history['val_metrics'].append(metrics)
+            self.history['val_metrics'].append(metrics.as_dict())
 
         self._generate_log()

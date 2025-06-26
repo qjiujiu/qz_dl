@@ -2,7 +2,7 @@ import os, sys
 sys.path.append("./")
 sys.path.append("../")
 
-from config.parser import ArgsParser
+from config.params_parser.parser import ArgsParser
 
 
 
