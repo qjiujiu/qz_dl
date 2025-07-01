@@ -19,6 +19,7 @@ from sklearn.metrics import (
     f1_score
 )
 
+# TODO 生成 log-id、缓存history 信息等功能要跟分类器解耦
 
 class ClassifierBaseModel(ABC, nn.Module):
     def __init__(self,  *args, **kwargs):

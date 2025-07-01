@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from datasets.mal_api_loader import load_mal_api_data
+from datasets.dataset_instance.mal_api import load
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from config.logger import logger_initiate
 from tqdm import tqdm
@@ -107,7 +107,7 @@ def generate_pgd_examples(config, model, cached_emb, cached_labels):
 
 def get_adv_emb_normal(config, model):
     # 加载数据集
-    full_dataset, vocab = load_mal_api_data(config['train_data'], config['train_labels'], split=False)
+    full_dataset, vocab = load(config['train_data'], config['train_labels'], split=False)
     full_loader = DataLoader(full_dataset, batch_size=config['batch_size'], shuffle=False)
 
 

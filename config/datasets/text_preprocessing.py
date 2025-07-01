@@ -6,6 +6,7 @@ import re
 from nltk.tokenize import word_tokenize
 from nltk import download
 
+
 # 预处理文本，将其转换为小写
 def preprocess_text(text):
     return text.lower()  # 转为小写

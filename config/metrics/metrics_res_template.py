@@ -1,9 +1,4 @@
 from dataclasses import dataclass, asdict
-from typing import Optional
-
-# 超参数配置类
-from dataclasses import dataclass, field
-import torch
 
 
 
@@ -13,6 +8,11 @@ class ClassificationResult:
     precision: float = None
     recall: float = None
     f1: float = None
+    verbose: bool = False
+    
+    def __post_init__(self):
+        pass
+
 
     def as_dict(self):
         return asdict(self)

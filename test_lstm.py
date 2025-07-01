@@ -2,7 +2,7 @@
 import torch
 from torch.utils.data import DataLoader
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
-from datasets.mal_api_loader import load_mal_api_data
+from config.datasets.dataset_instance import mal_api
 from config.logger import logger_initiate
 from tqdm import tqdm
 from utils.get_config import load_config
@@ -14,7 +14,7 @@ def test_model(config):
     batch_size = config['batch_size']
 
     # 数据加载
-    _, test_dataset, vocab = load_mal_api_data(config['train_data'], config['train_labels'])
+    _, test_dataset, vocab = mal_api.load(config['train_data'], config['train_labels'])
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # 创建模型
