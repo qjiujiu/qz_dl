@@ -1,10 +1,10 @@
 import torch
 import matplotlib.pyplot as plt
+from config.datasets.clean_emb_loader import load_clean_embedding_dataset
+from config.datasets.adv_emb_loader import load_adversarial_dataset
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
-from datasets.clean_emb_loader import load_clean_embedding_dataset
-from tqdm import tqdm
-from datasets.adv_emb_loader import load_adversarial_dataset
 from utils.get_config import load_config
+from tqdm import tqdm
 
 
 def create_model(config):

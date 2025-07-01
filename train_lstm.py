@@ -10,7 +10,6 @@ from config.logger import logger
 
 
 logger.is_debug(True)
-    
 
 
 # python train_lstm.py --batch-size 8 --epochs 30 --lr 0.001 --dropout-prob 0.5  --embedding-dim 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
