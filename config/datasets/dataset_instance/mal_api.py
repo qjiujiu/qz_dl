@@ -53,12 +53,12 @@ def load(text_path, labels_path, cache_dir='data/malapi2019/preprocessed', test_
     }
 
     # 文件名列表
-    file_names = ['train_texts.pkl', 'test_texts.pkl', 'train_labels.pkl', 'test_labels.pkl']
+    file_names = ['train_texts.pkl', 'test_texts.pkl', 'train_labels.pkl', 'test_labels.pkl', 'vocab.pkl']
     cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
 
     if cache_files_exist:
         logger.debug("📦 已有缓存，正在加载缓存数据集...")
-        train_texts, test_texts, train_labels, test_labels = [io.read_pickle(os.path.join(cache_dir, file)) for file in file_names]
+        train_texts, test_texts, train_labels, test_labels, vocab = [io.read_pickle(os.path.join(cache_dir, file)) for file in file_names]
     else:
         logger.debug("📦 首次处理，正在缓存数据集...")
         with open(text_path, 'r', encoding='utf-8') as text_file,\
@@ -83,12 +83,10 @@ def load(text_path, labels_path, cache_dir='data/malapi2019/preprocessed', test_
 
         # 使用循环保存所有数据到缓存
         os.makedirs(cache_dir, exist_ok=True)
-        for file, data in zip(file_names, [train_texts, test_texts, train_labels, test_labels]):
-            io.write_pickle(os.path.join(cache_dir, file), data)
+        for file, data in zip(file_names, [train_texts, test_texts, train_labels, test_labels, vocab]):
+            fname = os.path.join(cache_dir, file)
+            io.write_pickle(fname, data)
             logger.debug(f"已将 {file} 缓存成功...")
 
-    # 创建训练和测试数据集
-    train_dataset = MalAPITextDataset(texts=train_texts, labels=train_labels, vocab=vocab)
-    test_dataset = MalAPITextDataset(texts=test_texts, labels=test_labels, vocab=vocab)
 
-    return train_dataset, test_dataset, vocab
+    return train_texts, test_texts, train_labels, test_labels, vocab # train_dataset, test_dataset, vocab

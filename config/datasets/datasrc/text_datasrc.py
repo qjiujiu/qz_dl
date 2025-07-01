@@ -18,15 +18,22 @@ class TextDataSrc:
         """
         # 数据加载器模块直接返回两个 loader
         try:
-            train_dataset, test_dataset, vocab = mal_api.load(
+            X_train, X_test, y_train, y_test, vocab  = mal_api.load(
                 text_path="data/malapi2019/all_analysis_data.txt", 
                 labels_path="data/malapi2019/labels.txt"
             )
 
-            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-            test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+            # 创建训练和测试数据集
+            train_dataset = mal_api.MalAPITextDataset(texts=X_train, labels=y_train, vocab=vocab)
+            test_dataset = mal_api.MalAPITextDataset(texts=X_test, labels=y_test, vocab=vocab)
+                       
+            return DataResource(
+                train_dataset=train_dataset, 
+                test_dataset=test_dataset, 
+                batch_size=batch_size,
+                X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test, vocab=vocab
+            )
             
-            return DataResource(train_loader=train_loader, test_loader=test_loader, vocab=vocab)
         
         except ModuleNotFoundError:
             raise ValueError(f"Dataset '{dataset_name}' not found in 'datasrc' modules!")

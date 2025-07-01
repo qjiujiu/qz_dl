@@ -1,15 +1,28 @@
+import numpy as np
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, field, asdict
 from typing import Optional
 
+from tqdm import tqdm
 from dataclasses import dataclass
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 
 @dataclass
 class DataResource:
-    train_loader: DataLoader
-    test_loader: DataLoader
+    train_dataset: Dataset
+    test_dataset: Dataset
+    batch_size: int
+    X_train: list = field(default_factory=list)
+    X_test: list = field(default_factory=list)
+    y_train: list = field(default_factory=list)
+    y_test: list = field(default_factory=list)
     vocab: dict = None 
 
-    # TODO 重写这个对象
+    def __post_init__(self):
+        self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False)
+
+    # 转为 sklean 支持的格式
+    def to_sklearn_dataset(self):
+        return self.X_train, self.X_test, self.y_train, self.y_test
