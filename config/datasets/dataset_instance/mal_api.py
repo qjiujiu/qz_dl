@@ -1,9 +1,11 @@
 import os
 import torch
+import pickle
 
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 
+from utils import io
 from config.logger import logger
 from config.datasets.text_preprocessing import (
     build_vocab,
@@ -36,8 +38,8 @@ class MalAPITextDataset(Dataset):
 
 
 
-
-def load(text_file, labels_file, split = True, cache_dir='data/malapi2019/preprocessed', test_size=0.2, random_state=42):
+# https://www.kaggle.com/datasets/focatak/malapi2019 
+def load(text_path, labels_path, cache_dir='data/malapi2019/preprocessed', test_size=0.2, random_state=42):
     # 类别标签到整数的映射
     label_map = {
         'Spyware': 0,
@@ -50,31 +52,43 @@ def load(text_file, labels_file, split = True, cache_dir='data/malapi2019/prepro
         'Backdoor': 7
     }
 
+    # 文件名列表
+    file_names = ['train_texts.pkl', 'test_texts.pkl', 'train_labels.pkl', 'test_labels.pkl']
+    cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
 
-    print("📦 正在首次处理并缓存数据集...")
-    with open(text_file, 'r', encoding='utf-8') as f:
-        texts = f.readlines()
-    with open(labels_file, 'r', encoding='utf-8') as f:
-        labels = [label.strip() for label in f.readlines()]
+    if cache_files_exist:
+        logger.debug("📦 已有缓存，正在加载缓存数据集...")
+        train_texts, test_texts, train_labels, test_labels = [io.read_pickle(os.path.join(cache_dir, file)) for file in file_names]
+    else:
+        logger.debug("📦 首次处理，正在缓存数据集...")
+        with open(text_path, 'r', encoding='utf-8') as text_file,\
+             open(labels_path, 'r', encoding='utf-8') as label_file:
 
+            
+            texts, labels = [], []
+            for text, label in zip(text_file.readlines(), label_file.readlines()):
+                # 处理文本（去除换行符等）
+                texts.append(text.strip())  
+                # 处理标签（去除换行符，并转换为数字）
+                labels.append(label_map[label.strip()])  
 
-    # 将标签从字符串转换为整数
-    labels = [label_map[label] for label in labels]
+        # 将数据分割成训练集和测试集
+        train_texts, test_texts, train_labels, test_labels = train_test_split(texts, labels, test_size=test_size, random_state=random_state)
 
-    # 将数据分割成训练集和测试集
-    train_texts, test_texts, train_labels, test_labels = train_test_split(texts, labels, test_size=test_size, random_state=random_state)
+        # 缓存词表
+        vocab = build_vocab(train_texts)
 
-    # 缓存词表
-    vocab = build_vocab(train_texts)
+        logger.debug(f"词表大小：{len(vocab)}")
+        logger.debug(f"训练集文本标签对: {len(train_texts)}, 测试集文本标签对: {len(test_texts)}")
 
-    
-    logger.debug(f"词表大小：{len(vocab)}")
-    logger.debug(f"训练集文本标签对: {len(train_texts)}, 测试集文本标签对: {len(test_texts)}")
+        # 使用循环保存所有数据到缓存
+        os.makedirs(cache_dir, exist_ok=True)
+        for file, data in zip(file_names, [train_texts, test_texts, train_labels, test_labels]):
+            io.write_pickle(os.path.join(cache_dir, file), data)
+            logger.debug(f"已将 {file} 缓存成功...")
 
     # 创建训练和测试数据集
-    # 传递的是划分好的文本和标签，而不是文件路径
     train_dataset = MalAPITextDataset(texts=train_texts, labels=train_labels, vocab=vocab)
     test_dataset = MalAPITextDataset(texts=test_texts, labels=test_labels, vocab=vocab)
-   
 
     return train_dataset, test_dataset, vocab

@@ -19,8 +19,8 @@ class TextDataSrc:
         # 数据加载器模块直接返回两个 loader
         try:
             train_dataset, test_dataset, vocab = mal_api.load(
-                text_file="data/malapi2019/all_analysis_data.txt", 
-                labels_file="data/malapi2019/labels.txt"
+                text_path="data/malapi2019/all_analysis_data.txt", 
+                labels_path="data/malapi2019/labels.txt"
             )
 
             train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)

@@ -36,31 +36,3 @@ def text_to_indices(text, vocab):
 # 填充序列或截断
 def pad_sequence(seq, max_len, padding_value=1):
     return seq[:max_len] if len(seq) > max_len else seq + [padding_value] * (max_len - len(seq))
-
-# 加载数据集，并将文本转为索引的形式
-class MalAPITextDataset(Dataset):
-    def __init__(self, texts, labels, vocab, max_len=200):
-        self.texts = texts
-        self.labels = labels
-        self.vocab = vocab
-        self.max_len = max_len
-
-    def load_texts(self, file_path):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return f.readlines()
-
-    def load_labels(self, file_path):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return [int(label.strip()) for label in f.readlines()]
-
-    def __len__(self):
-        return len(self.texts)
-
-    def __getitem__(self, idx):
-        text = self.texts[idx]
-        label = self.labels[idx]
-        text_indices = text_to_indices(text, self.vocab)
-        padded_text = pad_sequence(text_indices, self.max_len)
-        return torch.tensor(padded_text), torch.tensor(label)
-
-
