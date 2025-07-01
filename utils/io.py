@@ -9,3 +9,4 @@ def write_pickle(fname, data):
     """将数据写入pickle文件"""
     with open(fname, 'wb') as f:
         pickle.dump(data, f)
+
