@@ -35,7 +35,6 @@ if __name__ == '__main__':
         embedding_dim=cfg.embedding_dim,
         hidden_dim=cfg.hidden_dim,
         output_dim=cfg.output_dim,
-        max_len=cfg.max_len,
     ).to(cfg.device)
 
 
