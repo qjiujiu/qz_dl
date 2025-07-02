@@ -180,11 +180,11 @@ class ClassifierBaseModel(ABC, nn.Module):
 
         for epoch in range(epochs):
             # 训练单个 epoch
-            print(f"Epoch [{epoch+1}/{epochs}]: ")
+            logger.info(f"Epoch [{epoch+1}/{epochs}]: ")
             avg_loss, metrics = self.train_one_epoch(loader, val_loader, **kwargs)
             
             # 打印当前轮的训练结果
-            print(f"Loss: {avg_loss:.4f}. {metrics}")
+            logger.info(f"Loss: {avg_loss:.4f}. {metrics}")
             self.history['train_loss'].append(avg_loss)
             self.history['val_metrics'].append(metrics.as_dict())
 
