@@ -22,6 +22,18 @@ class ArgsParser:
         parser.add_argument("--lr", type=float, default=0.01, help="学习率")
         parser.add_argument("--checkpoint-path", type=str, help="模型保存路径")
         parser.add_argument("--device", type=str, default="cuda", help="运行设备，默认 cuda，若不可用则自动转为 cpu 模式")
+        parser.add_argument("--dataset", type=str, default=None, help="使用的数据集名称")
+        parser.add_argument("--model", type=str, default=None, help="使用的模型的名称")
+        
+
+        # --- 预留超参数 ---
+        parser.add_argument("--alpha", type=float, default=0.5, help="预留超参数")
+        parser.add_argument("--beta", type=float, default=0.5, help="预留超参数")
+        parser.add_argument("--gama", type=float, default=0.5, help="预留超参数")
+        parser.add_argument("--n", type=int, default=1, help="预留超参数")
+        parser.add_argument("--L", type=int, default=1, help="预留超参数")
+        parser.add_argument("--t", type=int, default=1, help="预留超参数")
+        parser.add_argument("--x", type=int, default=1, help="预留超参数")
 
         # --- NLP 专用参数 ---
         parser.add_argument("--vocab-size", type=int, help="词表大小")
@@ -55,10 +67,10 @@ class ArgsParser:
         return config_class(**filtered)
 
     def create_cv_config(self) -> CvCfgParams:
-        return self.create_config(CvCfgParams, **self.args)
+        return self.create_config(CvCfgParams, **self.args_dict)
 
     def create_nlp_config(self) -> NlpCfgParams:
-        return self.create_config(NlpCfgParams, **self.args)
+        return self.create_config(NlpCfgParams, **self.args_dict)
 
 
 
