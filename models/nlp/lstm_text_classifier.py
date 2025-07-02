@@ -5,7 +5,7 @@ from models.classisifier import ClassifierBaseModel
 
 
 class LSTMTextClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, max_len, pretrained_embeddings=None):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 1, pretrained_embeddings=None):
         """ 初始化 LSTM 文本分类模型
         参数：
             - vocab_size: 词汇表大小
@@ -18,9 +18,9 @@ class LSTMTextClassifier(ClassifierBaseModel):
         super(LSTMTextClassifier, self).__init__()
         
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, output_dim)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True, bidirectional = bidirectional)
         self.dropout = nn.Dropout(0.5)
+        self.fc = self._build_fc(hidden_dim, output_dim, layers=layers)
 
     def embed(self, x: Tensor):
         """ 嵌入层前向传播
@@ -41,6 +41,31 @@ class LSTMTextClassifier(ClassifierBaseModel):
         dropped_out = self.dropout(hidden_out)
         output = self.fc(dropped_out)
         return output
+    
+    def _build_fc(self, in_dims: int, out_dims: int, layers: int = 1, dropout_prob: float = 0.5) -> nn.Sequential:
+        """ 构建全连接层：
+            - 头部层：in_dims -> hidden_dims
+            - 中间层：hidden_dims ->  hidden_dims
+            - 末尾层：hidden_dims ->  out_dims
+        """
+        fc_layers = nn.Sequential()
+        
+        # 设置隐藏层维度为输出维度（我们令所有中间层保持相同维度）
+        hidden_dim = out_dims
+        for i in range(layers):
+            if i == 0:
+                fc_layers.add_module(f"fc_{i}", nn.Linear(in_dims, hidden_dim))
+            else:
+                fc_layers.add_module(f"fc_{i}", nn.Linear(hidden_dim, hidden_dim))
+            
+            # 添加 ReLU 和 batch-norm
+            fc_layers.add_module(f"bn_{i}", nn.BatchNorm1d(hidden_dim))
+            fc_layers.add_module(f"relu_{i}", nn.ReLU())
+        
+        # 最后一层输出
+        fc_layers.add_module("final_fc", nn.Linear(hidden_dim, out_dims))
+        return fc_layers
+        
 
     def train_one_step(self, batch, only_emebedding = False):
         if only_emebedding: 
