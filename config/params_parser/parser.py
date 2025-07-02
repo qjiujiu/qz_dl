@@ -10,6 +10,7 @@ from config.params_parser.params_template import (
 class ArgsParser:
     def __init__(self):
         self.args = self._parse_args()
+        self.args_dict = vars(self.args)
 
     def _parse_args(self):
         parser = argparse.ArgumentParser(description="深度学习项目通用参数解析")
@@ -30,8 +31,12 @@ class ArgsParser:
         parser.add_argument("--max-len", type=int, help="最大序列长度")
         parser.add_argument("--only-embed", action="store_true", help="是否直接传入 embedding 向量进行训练")
 
-        args = parser.parse_args()
-        return vars(args)
+        # --- 其它场景的参数 ---
+        parser.add_argument("--max-feature", type=int, default=1000, help="机器模型特征提取器最大允许提取特征数")
+        parser.add_argument("--n-gram", type=int, default= 1, help="机器模型 n-gram 特征提取")
+
+        return parser.parse_args()
+    
 
     @staticmethod
     def create_config(config_class, **kwargs) -> CommonCfgParams:
