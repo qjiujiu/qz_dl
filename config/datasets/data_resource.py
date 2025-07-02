@@ -19,6 +19,10 @@ class DataResource:
     y_test: list = field(default_factory=list)
     vocab: dict = None 
 
+    def __str__(self):
+        # 打印train_dataset和test_dataset的shape
+        return f"train_dataset size: {len(self.train_dataset)}, test_dataset size: {len(self.test_dataset)}"
+
     def __post_init__(self):
         self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
         self.test_loader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False)
