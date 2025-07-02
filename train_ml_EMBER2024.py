@@ -15,7 +15,7 @@ from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score, classification_report
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
-
+import thrember
 
 logger.is_debug(True)
 
@@ -39,20 +39,14 @@ def train_and_evaluate(model, model_name, X_train_vec, y_train, X_test_vec, y_te
 
 # python train_ml.py --max-feature 128
 if __name__ == "__main__":
-    cfg =  ArgsParser().args
-    data_resource = TextDataSrc.load_dataset(
-        dataset_name="malapi", 
-        batch_size=cfg.batch_size
-    )
+    logger.debug("训练开始...")
 
-    X_train, X_test, y_train, y_test = data_resource.to_sklearn_dataset()
-    
-    vectorizer = TfidfVectorizer(ngram_range=(1, 1), max_features=cfg.max_feature)
-    X_train_tfidf = vectorizer.fit_transform(X_train)
-    X_test_tfidf = vectorizer.transform(X_test)
-    
+    X_train, y_train = thrember.read_vectorized_features('./data/EMBER2024/APK_all/', subset="train")
+    logger.debug(f"训练集尺寸: {X_train.shape}, {y_train.shape}")
 
-    print("TF-IDF Feature Shape:", X_train_tfidf.shape)
+    X_test, y_test = thrember.read_vectorized_features('./data/EMBER2024/APK_all/', subset="test")
+    logger.debug(f"测试集尺寸: {X_test.shape}, {y_test.shape}")
+
 
     # 定义要训练的模型
     models = [
@@ -64,6 +58,6 @@ if __name__ == "__main__":
 
     # 训练所有模型
     for name, model in models:
-        train_and_evaluate(model, name, X_train_tfidf, y_train, X_test_tfidf, y_test)
+        train_and_evaluate(model, name, X_train, y_train,X_test, y_test)
 
 
