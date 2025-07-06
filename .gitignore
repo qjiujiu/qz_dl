@@ -4,6 +4,8 @@
 /logs
 /res
 
+/EMBER2024
+
 # 基本 Python 必备忽略文件
 # Byte-compiled / optimized / DLL files
 __pycache__/
