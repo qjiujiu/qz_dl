@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from datasets.dataset_instance.mal_api import load
+from config.datasets.dataset_instance.mal_api import load
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from config.logger import logger_initiate
 from tqdm import tqdm

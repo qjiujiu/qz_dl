@@ -1,21 +1,15 @@
-import os
-import torch
 from config.datasets.dataset_instance import mal_api
-from torch.utils.data import (
-    TensorDataset, 
-    DataLoader, 
-    random_split
-)
-
 from config.datasets.data_resource import DataResource
-
+from config.params_parser.parser import ArgsParser
+from config.datasets.dataset_instance.mal_api_embed import get_embeding
 
 class TextDataSrc:
     @staticmethod
-    def load_dataset(dataset_name, batch_size = 8):
+    def load_dataset(dataset_name, batch_size = 8, use_embedding = False):
         """ 根据数据集名称加载对应的数据集模块，并返回训练集、测试集和词汇表。
             返回一个DataResource 模块，包含两个 loader
         """
+
         # 数据加载器模块直接返回两个 loader
         try:
             X_train, X_test, y_train, y_test, vocab  = mal_api.load(
@@ -34,7 +28,5 @@ class TextDataSrc:
                 X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test, vocab=vocab
             )
             
-        
         except ModuleNotFoundError:
             raise ValueError(f"Dataset '{dataset_name}' not found in 'datasrc' modules!")
-

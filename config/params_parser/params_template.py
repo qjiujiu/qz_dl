@@ -23,7 +23,7 @@ class CommonCfgParams:
     beta: float = 0.5
     gama: float = 0.5
     n: int = 1
-    L: int = 1
+    L: int = 0           # mlp 隐藏层层数
     t: int = 1
     x: int = 1
     

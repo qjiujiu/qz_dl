@@ -31,7 +31,7 @@ class ArgsParser:
         parser.add_argument("--beta", type=float, default=0.5, help="预留超参数")
         parser.add_argument("--gama", type=float, default=0.5, help="预留超参数")
         parser.add_argument("--n", type=int, default=1, help="预留超参数")
-        parser.add_argument("--L", type=int, default=1, help="预留超参数")
+        parser.add_argument("--L", type=int, default=0, help="预留超参数")
         parser.add_argument("--t", type=int, default=1, help="预留超参数")
         parser.add_argument("--x", type=int, default=1, help="预留超参数")
 

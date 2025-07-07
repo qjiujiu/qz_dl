@@ -5,7 +5,7 @@ from models.classisifier import ClassifierBaseModel
 
 
 class LSTMTextClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 1, pretrained_embeddings=None):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 0, pretrained_embeddings=None):
         """ 初始化 LSTM 文本分类模型
         参数：
             - vocab_size: 词汇表大小
@@ -42,7 +42,7 @@ class LSTMTextClassifier(ClassifierBaseModel):
         output = self.fc(dropped_out)
         return output
     
-    def _build_fc(self, in_dims: int, out_dims: int, layers: int = 1, dropout_prob: float = 0.5) -> nn.Sequential:
+    def _build_fc(self, in_dims: int, out_dims: int, layers: int = 0, dropout_prob: float = 0.5) -> nn.Sequential:
         """ 构建全连接层：
             - 头部层：in_dims -> hidden_dims
             - 中间层：hidden_dims ->  hidden_dims
@@ -51,7 +51,7 @@ class LSTMTextClassifier(ClassifierBaseModel):
         fc_layers = nn.Sequential()
         
         # 设置隐藏层维度为输出维度（我们令所有中间层保持相同维度）
-        hidden_dim = out_dims
+        hidden_dim = in_dims
         for i in range(layers):
             if i == 0:
                 fc_layers.add_module(f"fc_{i}", nn.Linear(in_dims, hidden_dim))
