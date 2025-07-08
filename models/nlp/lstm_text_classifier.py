@@ -5,7 +5,7 @@ from models.classisifier import ClassifierBaseModel
 
 
 class LSTMTextClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 0, pretrained_embeddings=None):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 0, **kwargs):
         """ 初始化 LSTM 文本分类模型
         参数：
             - vocab_size: 词汇表大小
@@ -42,7 +42,7 @@ class LSTMTextClassifier(ClassifierBaseModel):
         output = self.fc(dropped_out)
         return output
     
-    def _build_fc(self, in_dims: int, out_dims: int, layers: int = 0, dropout_prob: float = 0.5) -> nn.Sequential:
+    def _build_fc(self, in_dims: int, out_dims: int, layers: int = 0) -> nn.Sequential:
         """ 构建全连接层：
             - 头部层：in_dims -> hidden_dims
             - 中间层：hidden_dims ->  hidden_dims
@@ -67,18 +67,20 @@ class LSTMTextClassifier(ClassifierBaseModel):
         return fc_layers
         
 
-    def train_one_step(self, batch, only_emebedding = False):
-        if only_emebedding: 
-            return super().train_one_step(batch, only_emebedding)
+    def train_one_step(self, batch, encoder = None):
+        if encoder: 
+            batch[0] = encoder(batch[0])
+            return super().train_one_step(batch)
         
         x, y = batch
         x, y = x.to(self.device), y.to(self.device)
         y_ = self.forward(self.embed(x))
         return self.loss_fn(y_, y)
     
-    def eval_one_step(self, batch, only_emebedding = False):
-        if only_emebedding:
-            return super().eval_one_step(batch, only_emebedding)
+    def eval_one_step(self, batch, encoder = None):
+        if encoder:
+            batch[0] = encoder(batch[0])
+            return super().eval_one_step(batch)
         
         x, y = batch
         x, y = x.to(self.device), y.to(self.device)
