@@ -20,8 +20,8 @@ logger.is_debug(True)
         python train_lstm.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
 
     - Embedding 输入
-        python train_lstm.py --only-embed -ec default --model lstm -bs 8 --ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
-        python train_lstm.py --only-embed -ec default --model lstm -bs 8 --ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-08/LSTMTextClassifier/20250708-0840-11838954_weights.pth
+        python train_lstm.py --only-embed -ec default --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
+        python train_lstm.py --only-embed -ec default --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-08/LSTMTextClassifier/20250708-0840-11838954_weights.pth
 
     若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数
     若想跳过文本格式数据直接传输向量，可添加 --only-embed -ec default
@@ -61,8 +61,8 @@ if __name__ == "__main__":
     # 如果开启向量模式，会通过 encoder 来将索引转为向量，再把向量丢给 model
     encoder = pick_embedding_encoder(cfg, cfg.load_path)
     logger.debug(
-        f"是否开启 embedding 模式: {cfg.only_embed}"   # 是否开启向量模式
-        f"当前使用 embedding 模块结构: {encoder}"       # 若不开启默认为空
+        f"是否开启 embedding 模式: {cfg.only_embed}"     # 是否开启向量模式
+        f"当前使用外部 encoder: {encoder}"                # 若不开启默认为空
     )
     
     # 最后一轮评估的结果就是测试集上面跑出来的结果

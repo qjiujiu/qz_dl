@@ -12,7 +12,6 @@ from config.datasets.text_preprocessing import (
     pad_sequence
 )
 
-
 logger.is_debug(True)
 
 
@@ -34,7 +33,17 @@ class MalAPITextDataset(Dataset):
         padded_text = pad_sequence(text_indices, self.max_len)
         return torch.tensor(padded_text), torch.tensor(label)
 
+class MalAPIEmbedDataset(Dataset):
+    def __init__(self, embeddings, labels):
+        self.embeddings = embeddings
+        self.labels = labels
 
+    def __len__(self):
+        return len(self.embeddings)
+
+    def __getitem__(self, idx):
+        # print(torch.tensor(self.embeddings[idx]).shape)
+        return torch.tensor(self.embeddings[idx]), torch.tensor(self.labels[idx])
 
 
 # https://www.kaggle.com/datasets/focatak/malapi2019 
@@ -89,3 +98,28 @@ def load(text_path, labels_path, cache_dir='data/malapi2019/preprocessed', test_
 
 
     return train_texts, test_texts, train_labels, test_labels, vocab # train_dataset, test_dataset, vocab
+
+def load_fgsmemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm/"):
+    
+    file_names = ['train_adv_embeddings.pkl', 'test_adv_embeddings.pkl']
+    cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
+    if cache_files_exist:
+        logger.debug("📦 malapi_fgsmemd 已有缓存，正在加载缓存数据集...")
+        train_data = io.read_pickle(os.path.join(cache_dir, file_names[0]))  # 读取训练集
+        test_data = io.read_pickle(os.path.join(cache_dir, file_names[1]))  # 读取测试集
+        train_texts, train_labels = train_data
+        test_texts, test_labels = test_data
+
+    return train_texts, test_texts, train_labels, test_labels
+
+def load_pgdemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-pgd/"):
+    file_names = ['train_adv_embeddings.pkl', 'test_adv_embeddings.pkl']
+    cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
+    if cache_files_exist:
+        logger.debug("📦 malapi_pgdemd 已有缓存，正在加载缓存数据集...")        
+        train_data = io.read_pickle(os.path.join(cache_dir, file_names[0]))  # 读取训练集
+        test_data = io.read_pickle(os.path.join(cache_dir, file_names[1]))  # 读取测试集
+        train_texts, train_labels = train_data
+        test_texts, test_labels = test_data
+        
+    return train_texts, test_texts, train_labels, test_labels

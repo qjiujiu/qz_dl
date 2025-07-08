@@ -6,20 +6,7 @@ from config.params_parser.parser import ArgsParser
 from config.logger import logger
 from utils.models import pick_model
 from config.datasets.dataset_instance import mal_api
-
-def load_model(model_instance, checkpoint_path):
-    """加载已训练的模型"""
-    # 加载模型权重
-    try:
-        model_instance.load_state_dict(torch.load(checkpoint_path))
-        logger.debug(f"模型权重从 {checkpoint_path} 成功加载")
-    except Exception as e:
-        logger.error(f"加载模型权重失败: {e}")
-        raise
-    
-    model_instance.eval()  # 切换为评估模式
-    return model_instance
-
+from config.params_parser.params_template import NlpCfgParams
 
 def save_embeddings(embeddings, labels, save_dir, file_name):
     """保存嵌入表示"""
@@ -30,7 +17,7 @@ def save_embeddings(embeddings, labels, save_dir, file_name):
     logger.debug(f"嵌入表示已保存到 {save_path}")
 
 
-def get_embeding(cfg):
+def get_embeding(cfg: NlpCfgParams):
     # 文件路径
     data_dir = "data/malapi2019/preprocessed"
     save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/clean-exam"
@@ -60,9 +47,8 @@ def get_embeding(cfg):
 
     device = torch.device(cfg.device) 
 
-    # 加载模型
-    model_instance = pick_model(cfg)
-    model = load_model(model_instance, cfg.checkpoint_path)
+    # 加载权重模型
+    model = pick_model(cfg, cfg.checkpoint_path)
     model = model.to(device)
 
     train_dataset = mal_api.MalAPITextDataset(texts=train_texts, labels=train_labels, vocab=vocab)

@@ -8,7 +8,8 @@ from config.params_parser.params_template import (
 )
 from utils import io
 from typing import Union
-
+from config.logger import logger
+import torch
 
 def pick_model(cfg: CommonCfgParams, load_path: str = None):
     """ 根据 model_name 返回对应的模型实例

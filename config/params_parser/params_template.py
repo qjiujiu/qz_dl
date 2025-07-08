@@ -9,14 +9,14 @@ import torch
 
 @dataclass
 class CommonCfgParams:
-    batch_size: int = 32                   # 批处理大小
-    epochs: int = 10                       # 训练轮数
+    batch_size: int = 8                    # 批处理大小
+    epochs: int = 30                       # 训练轮数
     lr: float = 0.01                       # 学习率
     dropout_prob: float = 0.5              # 随机失活概率
     device: str = "cuda"                   # 运行设备
     dataset: Optional[str] = None          # 使用的数据集的名称
     model: Optional[str] = None            # 使用的模型名称
-    load_path: Optional[str] = None        # 模型权重载入路径
+    load_path: Optional[str] = None        # encoder模型权重载入路径
     checkpoint_path: Optional[str] = None  # 模型保存路径
     seed: int = 3407                       # 随机数种子
     
@@ -53,8 +53,17 @@ class NlpCfgParams(CommonCfgParams):
     output_dim: Optional[int] = None             # 输出类别数
     max_len: Optional[int] = None                # 最大序列长度
   
-    only_embed: bool = False                     # 直接传入embedding 向量进行训练，而不传入文件索引
+    only_embed: bool = False                     # 直接传入 embedding 向量进行训练，而不传入文件索引
     encoder: str = None                          # 使用何种编码器来将文本输入转为 embedding 向量输入
     
+    def __post_init__(self):
+        pass
+
+class AdvCfgParams(NlpCfgParams):
+    fgsm_epsilon: Optional[int] = 0.1           # FGSM 扰动强度
+    pgd_epsilon: Optional[int] = 0.1            # PGD 最大扰动范围
+    pgd_alpha: Optional[int] = 0.01             # PGD 每步更新幅度
+    pgd_iters: Optional[int] = 5                # PGD 迭代次数
+
     def __post_init__(self):
         pass
