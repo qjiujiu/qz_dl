@@ -5,7 +5,7 @@ from config.datasets.dataset_instance.mal_api_embed import get_embeding
 
 class TextDataSrc:
     @staticmethod
-    def load_dataset(dataset_name, batch_size = 8, use_embedding = False):
+    def load_dataset(dataset_name, batch_size = 8, encoder = None):
         """ 根据数据集名称加载对应的数据集模块，并返回训练集、测试集和词汇表。
             返回一个DataResource 模块，包含两个 loader
         """

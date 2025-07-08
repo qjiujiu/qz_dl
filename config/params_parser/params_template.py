@@ -18,6 +18,7 @@ class CommonCfgParams:
     model: Optional[str] = None            # 使用的模型名称
     load_path: Optional[str] = None        # 模型权重载入路径
     checkpoint_path: Optional[str] = None  # 模型保存路径
+    seed: int = 3407                       # 随机数种子
     
     # 预留的超参数，相当于提前占用了这些字母，这些参数可能用于任何地方
     alpha: float = 0.5
@@ -53,6 +54,7 @@ class NlpCfgParams(CommonCfgParams):
     max_len: Optional[int] = None                # 最大序列长度
   
     only_embed: bool = False                     # 直接传入embedding 向量进行训练，而不传入文件索引
+    encoder: str = None                          # 使用何种编码器来将文本输入转为 embedding 向量输入
     
     def __post_init__(self):
         pass
