@@ -16,7 +16,8 @@ class CommonCfgParams:
     device: str = "cuda"                   # 运行设备
     dataset: Optional[str] = None          # 使用的数据集的名称
     model: Optional[str] = None            # 使用的模型名称
-    checkpoint_path: Optional[str] = None  # 模型保存路径，使用 Optional 和 None 表示可选字段
+    load_path: Optional[str] = None        # 模型权重载入路径
+    checkpoint_path: Optional[str] = None  # 模型保存路径
     
     # 预留的超参数，相当于提前占用了这些字母，这些参数可能用于任何地方
     alpha: float = 0.5
