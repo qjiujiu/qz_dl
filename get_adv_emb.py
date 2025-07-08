@@ -1,158 +1,167 @@
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from config.datasets.dataset_instance.mal_api import load
-from models.nlp.lstm_text_classifier import LSTMTextClassifier
-from config.logger import logger_initiate
-from tqdm import tqdm
+import pickle
 import os
-from utils.get_config import load_config
+from config.params_parser.parser import ArgsParser
+from config.logger import logger
+from utils.models import pick_model
+from config.datasets.datasrc.text_datasrc import TextDataSrc
+from config.params_parser.params_template import AdvCfgParams
+from tqdm import tqdm
 
-# FGSM 攻击
-def fgsm_attack(model, emb_input, labels, epsilon, device):
-    emb_input = emb_input.clone().detach().to(device).requires_grad_(True)
-    labels = labels.to(device)
-    # torch.nn.LSTM 的 cuDNN 实现在 eval() 模式下 禁止反向传播
-    # model.eval()
+class AdversarialAttack:
+    def __init__(self, model, cfg: AdvCfgParams):
+        self.model = model
+        self.fgsm_epsilon = cfg.fgsm_epsilon
+        self.pgd_epsilon = cfg.pgd_epsilon
+        self.pgd_alpha = cfg.pgd_alpha
+        self.pgd_iters = cfg.pgd_iters
+        self.device = cfg.device  
+        self.model.to(self.device)
+
+    def pgd_attack(self, texts, labels):
+        """
+        生成 PGD 对抗样本 (针对模型的 Embedding 层的输出)
+        """
+        # 设置模型为训练模式，以支持反向传播
+        self.model.train()
+
+        # 临时禁用 dropout
+        original_dropout_p = self.model.dropout.p
+        self.model.dropout.p = 0.0
+
+        # 将输入数据和标签传入设备
+        texts = texts.to(self.device)  
+        labels = labels.to(self.device)  
+
+        # 获取初始嵌入表示
+        adv = self.model.embed(texts).detach().requires_grad_(True)  # 初始化对抗样本
+        ori = adv.detach()
+
+        for _ in range(self.pgd_iters):
+            self.model.zero_grad()
+            # 使用当前的对抗样本进行前向传播
+            output = self.model.forward(adv)
+            # 计算交叉熵损失
+            loss = F.cross_entropy(output, labels)
+            loss.backward()
+            # 计算对抗扰动
+            adv = adv + self.pgd_alpha * adv.grad.sign()  # 依据梯度更新对抗样本
+            eta = torch.clamp(adv - ori, -self.pgd_epsilon, self.pgd_epsilon)  # 限制扰动范围
+            adv = torch.clamp(ori + eta, 0, 1).detach_().requires_grad_(True)  # 更新对抗样本
+
+        # 恢复模型的 dropout 设置
+        self.model.dropout.p = original_dropout_p
+        return adv.detach()
     
-    # 设置为 train 模式以支持 RNN 反向传播
-    model.train()
-    # 临时禁用 dropout
-    original_dropout_p = model.dropout.p
-    model.dropout.p = 0.0
-    
-    output = model.forward(emb_input)
-    loss = F.cross_entropy(output, labels)
-    loss.backward()
-    adv_emb = emb_input + epsilon * emb_input.grad.sign()
-    return adv_emb.detach()
+    def fgsm_attack(self, texts, labels):
+        """
+        生成 FGSM 对抗样本 (针对模型的 Embedding 层的输出)
+        """
+        # 设置模型为训练模式，以支持反向传播
+        self.model.train()
 
-# PGD 攻击
-def pgd_attack(model, emb_input, labels, epsilon, alpha, iters, device):
-    ori = emb_input.clone().detach().to(device)
-    adv = ori.clone().detach().requires_grad_(True)
-    labels = labels.to(device)
-    # torch.nn.LSTM 的 cuDNN 实现在 eval() 模式下 禁止反向传播
-    # model.eval()
+        # 临时禁用 dropout
+        original_dropout_p = self.model.dropout.p
+        self.model.dropout.p = 0.0
 
-    # 设置为 train 模式以支持 RNN 反向传播
-    model.train()
-    # 临时禁用 dropout
-    original_dropout_p = model.dropout.p
-    model.dropout.p = 0.0
+        # 将输入数据和标签传入设备
+        texts = texts.to(self.device)
+        labels = labels.to(self.device)
 
-    for _ in range(iters):
-        model.zero_grad()
-        output = model.forward(adv)
+        # 获取初始嵌入表示
+        adv = self.model.embed(texts).detach().requires_grad_(True)  # 初始化对抗样本
+        # 前向传播
+        output = self.model.forward(adv)
+        # 计算损失并反向传播
         loss = F.cross_entropy(output, labels)
         loss.backward()
-        adv = adv + alpha * adv.grad.sign()
-        eta = torch.clamp(adv - ori, -epsilon, epsilon)
-        adv = torch.clamp(ori + eta, 0, 1).detach_().requires_grad_(True)
-    return adv.detach()
+        # 生成对抗样本
+        adv_emb = adv + self.fgsm_epsilon * adv.grad.sign()  # 依据梯度更新对抗样本
 
-# 缓存嵌入表示
-def cache_embeddings(model, dataloader, device, cache_path='data/malapi2019/emb-feature/clean-exam'):
-    clean_path = os.path.join(cache_path, 'clean_examples.pt')
-    if os.path.exists(clean_path):
-        return torch.load(clean_path)
+        # 恢复模型的 dropout 设置
+        self.model.dropout.p = original_dropout_p
+        return adv_emb.detach()
+
+def save_pgd_embeddings(model, data_resource, cfg: AdvCfgParams):
+    save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-pgd"
+    """生成并保存训练集和测试集的对抗嵌入表示"""
+    os.makedirs(save_dir, exist_ok=True)
+
+    # 获取训练集对抗嵌入
+    print("生成训练集的pgd对抗嵌入...")
+    train_adv_embeddings = []
+    for texts, labels in tqdm(data_resource.train_loader, desc="Training data", unit="batch"):
+        adv_embeds = AdversarialAttack(model, cfg).pgd_attack(texts, labels)
+        flattened_embeds = adv_embeds.flatten(0, 1)  # 压平第一个和第二个维度，保留 embedding_size
+        train_adv_embeddings.append(flattened_embeds.cpu().detach().numpy())
     
-    model.eval()
-    all_embeddings = []
-    all_labels = []
-    with torch.no_grad():
-        for texts, labels in tqdm(dataloader, desc="Caching embeddings"):
-            texts = texts.to(device)
-            labels = labels.to(device)
-            emb = model.embedding(texts)
-            all_embeddings.append(emb.cpu())
-            all_labels.append(labels.cpu())
+    # 保存训练集对抗嵌入
+    with open(os.path.join(save_dir, "train_adv_embeddings.pkl"), "wb") as f:
+        pickle.dump((train_adv_embeddings, data_resource.y_train), f)
 
-    cached_emb = torch.cat(all_embeddings)
-    cached_labels = torch.cat(all_labels)
+    print("训练集的pgd对抗嵌入已保存。")
 
-    os.makedirs(cache_path, exist_ok=True)
-    torch.save((cached_emb, cached_labels), clean_path)
-
-    return cached_emb, cached_labels
-
-    # FGSM 样本生成
-def generate_fgsm_examples(config, model, cached_emb, cached_labels):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    epsilon = config['fgsm_epsilon']
-
-    model.load_state_dict(torch.load(config['checkpoint_path'], map_location=device))
-
-    logger = logger_initiate(log_level='INFO', is_console=True, is_file=True, is_colorful=True)
-    adv_fgsm = fgsm_attack(model, cached_emb, cached_labels, epsilon, device)
-    os.makedirs('data/malapi2019/emb-feature/advexam-fgsm', exist_ok=True)
-    torch.save((adv_fgsm.cpu(), cached_labels), 'data/malapi2019/emb-feature/advexam-fgsm/fgsm.pt')
-    logger.info("FGSM adversarial examples saved.")
-
-# PGD 样本生成
-def generate_pgd_examples(config, model, cached_emb, cached_labels):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    epsilon = config['pgd_epsilon']
-    alpha = config['pgd_alpha']
-    pgd_iters = config['pgd_iters']
-
-    model.load_state_dict(torch.load(config['checkpoint_path'], map_location=device))
-
-    logger = logger_initiate(log_level='INFO', is_console=True, is_file=True, is_colorful=True)
-    adv_pgd = pgd_attack(model, cached_emb, cached_labels, epsilon, alpha, pgd_iters, device)
-    os.makedirs('data/malapi2019/emb-feature/advexam-pgd', exist_ok=True)
-    torch.save((adv_pgd.cpu(), cached_labels), 'data/malapi2019/emb-feature/advexam-pgd/pgd.pt')
-    logger.info("PGD adversarial examples saved.")
-
-
-def get_adv_emb_normal(config, model):
-    # 加载数据集
-    full_dataset, vocab = load(config['train_data'], config['train_labels'], split=False)
-    full_loader = DataLoader(full_dataset, batch_size=config['batch_size'], shuffle=False)
-
-
-    cached_emb, cached_labels = cache_embeddings(model, full_loader, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-
-    # 生成 FGSM 和 PGD 样本
-    generate_fgsm_examples(config, model, cached_emb, cached_labels)
-    generate_pgd_examples(config, model, cached_emb, cached_labels)
-
-def get_adv_emb_MiniLML6(config, model, example_path = 'data/malapi2019/emb-MiniLM-L6/clean_examples.pt'):
-    # 加载干净样本和标签
-    cached_emb, cached_labels = torch.load(example_path)
+    # 获取测试集对抗嵌入
+    print("生成测试集的pgd对抗嵌入...")
+    test_adv_embeddings = []
+    for texts, labels in tqdm(data_resource.test_loader, desc="Testing data", unit="batch"):
+        adv_embeds = AdversarialAttack(model, cfg).pgd_attack(texts, labels)
+        flattened_embeds = adv_embeds.flatten(0, 1)  # 压平第一个和第二个维度，保留 embedding_size
+        test_adv_embeddings.append(flattened_embeds.cpu().detach().numpy())
     
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    epsilon = config['fgsm_epsilon']  # FGSM epsilon
-    alpha = config['pgd_alpha']  # PGD alpha
-    pgd_iters = config['pgd_iters']  # PGD iterations
+    # 保存测试集对抗嵌入
+    with open(os.path.join(save_dir, "test_adv_embeddings.pkl"), "wb") as f:
+        pickle.dump((test_adv_embeddings, data_resource.y_test), f)
 
-    # 生成 FGSM 对抗样本
-    adv_fgsm = fgsm_attack(model, cached_emb, cached_labels, epsilon, device)
-    fgsm_save_path = os.path.join(os.path.dirname(example_path), 'adv_fgsm.pt')
-    torch.save((adv_fgsm.cpu(), cached_labels), fgsm_save_path)
+    print("测试集的pgd对抗嵌入已保存。")
 
-    # 生成 PGD 对抗样本
-    adv_pgd = pgd_attack(model, cached_emb, cached_labels, epsilon, alpha, pgd_iters, device)
-    pgd_save_path = os.path.join(os.path.dirname(example_path), 'adv_pgd.pt')
-    torch.save((adv_pgd.cpu(), cached_labels), pgd_save_path)
+def save_fgsm_embeddings(model, data_resource, cfg: AdvCfgParams):
+    save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm"
+    """生成并保存训练集和测试集的 FGSM 对抗嵌入表示"""
+    os.makedirs(save_dir, exist_ok=True)
 
-    print(f"FGSM adversarial examples saved to {fgsm_save_path}")
-    print(f"PGD adversarial examples saved to {pgd_save_path}")
+    # 获取训练集对抗嵌入
+    print("生成训练集的fgsm对抗嵌入...")
+    train_adv_embeddings = []
+    for texts, labels in tqdm(data_resource.train_loader, desc="Training data", unit="batch"):
+        adv_embeds = AdversarialAttack(model, cfg).fgsm_attack(texts, labels)
+        flattened_embeds = adv_embeds.flatten(0, 1)  # 压平第一个和第二个维度，保留 embedding_size
+        # 转换为 numpy 数组，减少内存占用
+        train_adv_embeddings.append(flattened_embeds.cpu().detach().numpy())
+
+    with open(os.path.join(save_dir, "train_adv_embeddings.pkl"), "wb") as f:
+        pickle.dump((train_adv_embeddings, data_resource.y_train), f)
+
+    print("训练集的fgsm对抗嵌入已保存。")
+
+    # 获取测试集对抗嵌入
+    print("生成测试集的fgsm对抗嵌入...")
+    test_adv_embeddings = []
+    for texts, labels in tqdm(data_resource.test_loader, desc="Testing data", unit="batch"):
+        adv_embeds = AdversarialAttack(model, cfg).fgsm_attack(texts, labels)
+        flattened_embeds = adv_embeds.flatten(0, 1)  # 压平第一个和第二个维度，保留 embedding_size
+        # 转换为 numpy 数组，减少内存占用
+        test_adv_embeddings.append(flattened_embeds.cpu().detach().numpy())
+
+    with open(os.path.join(save_dir, "test_adv_embeddings.pkl"), "wb") as f:
+        pickle.dump((test_adv_embeddings, data_resource.y_test), f)
+
+    print("测试集的fgsm对抗嵌入已保存。")
+ 
+
+# python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-08/LSTMTextClassifier/20250708-1008-99ce270c_weights.pth
 
 if __name__ == "__main__":
-    config = load_config("config/lstm_config.yaml")  # 加载配置
-    # 加载模型并缓存嵌入
-    model = LSTMTextClassifier(
-        vocab_size=config['vocab_size'],
-        embedding_dim=config['embedding_dim'],
-        hidden_dim=config['hidden_dim'],
-        output_dim=config['output_dim'],
-        max_len=config['max_len']
-    ).to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-    
+    # 加载配置和数据
+    cfg = ArgsParser().create_adv_config()
+    data_resource = TextDataSrc.load_dataset(
+        dataset_name="malapi", 
+        batch_size=cfg.batch_size, 
+    )
+    # 加载预训练的模型
+    model = pick_model(cfg, cfg.checkpoint_path)
 
-    # 在普通嵌入层得到的Embedding特征上生成对抗样本
-    # get_adv_emb_normal(config, model)
-
-    # 从 MiNiLM 模型得到的Embedding特征上生成对抗样本
-    get_adv_emb_MiniLML6(config, model)
+    # 保存对抗嵌入
+    save_pgd_embeddings(model, data_resource, cfg)
+    save_fgsm_embeddings(model, data_resource, cfg)
