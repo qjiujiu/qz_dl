@@ -1,14 +1,20 @@
 from models.nlp.conv_text import Conv1dTextClassifier
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 
-def pick_model(cfg):
+from config.params_parser.params_template import CommonCfgParams 
+from utils import io
+from typing import Union
+
+
+def pick_model(cfg: CommonCfgParams):
     """ 根据 model_name 返回对应的模型实例
     :param model_name: 模型名称，如 'lstm', 'conv1d'
     :param cfg: 配置对象，包含所有超参数
     :return: 实例化的模型
     """
+    model = None
     if cfg.model == 'lstm':
-        return LSTMTextClassifier(
+        model = LSTMTextClassifier(
             vocab_size=cfg.vocab_size,
             embedding_dim=cfg.embedding_dim,
             hidden_dim=cfg.hidden_dim,
@@ -16,11 +22,18 @@ def pick_model(cfg):
             layers=cfg.L 
         )
     elif cfg.model == 'conv1d':
-        return Conv1dTextClassifier(
+        model = Conv1dTextClassifier(
             vocab_size=cfg.vocab_size,
             embedding_dim=cfg.embedding_dim,
             hidden_dim=cfg.hidden_dim,
             output_dim=cfg.output_dim
         )
     
-    raise ValueError(f"Unknown model name: {cfg.model}")
+    if model is None:
+        raise ValueError(f"Unknown model name: {cfg.model}")
+    
+    if cfg.load_path is not None: 
+        model = io.load_model_weights(model, cfg.load_path, device=cfg.device)
+    
+    return model
+    
