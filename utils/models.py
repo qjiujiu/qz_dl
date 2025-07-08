@@ -42,7 +42,7 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
 
 def pick_embedding_encoder(cfg: NlpCfgParams, load_path: str = None):
     """ 根据 encoder-name 返回对应的 embedding encoder 模型,
-        需要注意， encoder 是不参与训练的，因此在返回之后必须冻结其参数
+        需要注意，encoder 是不参与训练的，因此在返回之后必须冻结其参数
     """
     encoder = None
 
