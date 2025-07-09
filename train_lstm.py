@@ -21,10 +21,10 @@ logger.is_debug(True)
 
     - Embedding 输入
         python train_lstm.py --only-embed -ec default --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
-        python train_lstm.py --only-embed -ec default --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-08/LSTMTextClassifier/20250708-0840-11838954_weights.pth
-
+        
+        
     若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数
-    若想跳过文本格式数据直接传输向量，可添加 --only-embed -ec default
+    若想跳过文本格式数据直接传输向量，可添加 --only-embed
 
     特别强调，如果直接使用预训练的 model embedding 模块产出的向量训练，必须传入预训练模型的权重路径
 """

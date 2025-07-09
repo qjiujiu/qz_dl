@@ -1,62 +1,74 @@
-# 用干净样本测试 FGSM对抗训练模型，PGD对抗训练模型，以及干净模型的性能
+# train_lstm.py
 import torch
-from models.nlp.lstm_text_classifier import LSTMTextClassifier
-from config.logger import logger_initiate
-from tqdm import tqdm
-import os
-from utils.get_config import load_config
-from datasets.clean_emb_loader import load_clean_embedding_dataset
+import torch.optim as optim
+import torch.nn as nn
 
-def test_on_clean_embedding(config, tag="Adv"):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    batch_size = config['batch_size']
-    max_len = config['max_len']
-    checkpoint_path = config['checkpoint_path']
-    cache_path = 'data/malapi2019/emb-feature/clean-exam/clean_examples.pt'
-    
-    # 加载数据集
-    _, test_loader = load_clean_embedding_dataset(cache_path, batch_size)
+from config.datasets.datasrc.text_datasrc import TextDataSrc
+from config.params_parser.parser import ArgsParser
+from config.logger import logger
 
-    # 初始化模型（vocab_size 设置为任意正数即可）
-    model = LSTMTextClassifier(
-        vocab_size=278,
-        embedding_dim=config['embedding_dim'],
-        hidden_dim=config['hidden_dim'],
-        output_dim=config['output_dim'],
-        max_len=max_len
-    ).to(device)
+from utils.models import (
+    pick_model, 
+    pick_embedding_encoder
+)
 
-    if not os.path.exists(checkpoint_path):
-        raise FileNotFoundError(f"模型权重文件不存在：{checkpoint_path}")
-    model.load_state_dict(torch.load(checkpoint_path, map_location=device), strict=False)
-    model.eval()
 
-    logger = logger_initiate(log_level='INFO', is_console=True, is_file=True, is_colorful=True)
+logger.is_debug(True)
 
-    correct, total = 0, 0
-    with torch.no_grad():
-        with tqdm(test_loader, desc=f"[{tag}] Testing on Clean Embedding", unit="batch") as tepoch:
-            for emb_batch, label_batch in tepoch:
-                emb_batch, label_batch = emb_batch.to(device), label_batch.to(device)
-                outputs = model.forward(emb_batch)
-                _, predicted = torch.max(outputs, dim=1)
-                total += label_batch.size(0)
-                correct += (predicted == label_batch).sum().item()
-                tepoch.set_postfix(accuracy=correct / total * 100)
+""" 使用说明
+    - 文本输入: 
+        python test_lstm_clean_emb.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth
 
-    acc = correct / total
-    logger.info(f"[{tag}] Clean Test Accuracy: {acc * 100:.2f}%")
+    - Embedding 输入
+        python test_lstm_clean_emb.py --only-embed --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth
+
+    若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数
+    若想跳过文本格式数据直接传输向量，可添加 --only-embed
+
+    特别强调，如果直接使用预训练的 model embedding 模块产出的向量训练，必须传入预训练模型的权重路径
+"""
+
 
 
 if __name__ == "__main__":
-    # 测试 FGSM 对抗模型
-    config_fgsm = load_config("config/lstm_fgsm_config.yaml")
-    test_on_clean_embedding(config_fgsm, tag="FGSM")
+    cfg =  ArgsParser().create_nlp_config()
+    model = pick_model(cfg, cfg.checkpoint_path)
+    logger.debug(
+        f"模型结构: {model}"
+        f"预测头层数: {cfg.L + 1}"
+    )
 
-    # 测试 PGD 对抗模型
-    config_pgd = load_config("config/lstm_pgd_config.yaml")
-    test_on_clean_embedding(config_pgd, tag="PGD")
+    data_resource = TextDataSrc.load_dataset(
+        dataset_name="malapi_cleanemb", 
+        batch_size=cfg.batch_size, 
+    )
 
-    # 测试 干净 模型
-    config_clean = load_config("config/lstm_config.yaml")
-    test_on_clean_embedding(config_clean, tag="Clean")
+    logger.debug(f"本轮训练的超参数设置: {cfg}")
+    logger.debug(f"使用的训练数据规模: {data_resource}")    
+
+
+    # 定义损失函数和优化器
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=cfg.lr)
+
+    model.setup_ctx(cfg)\
+        .setup_loss(criterion)\
+        .setup_optimizer(optimizer)
+
+    
+    # 如果开启向量模式，会通过 encoder 来将索引转为向量，再把向量丢给 model
+    encoder = pick_embedding_encoder(cfg, cfg.load_path)
+    logger.debug(
+        f"是否开启 embedding 模式: {cfg.only_embed}"     # 是否开启向量模式
+        f"当前使用外部 encoder: {encoder}"                # 若不开启默认为空
+    )
+    
+    # 最后一轮评估的结果就是测试集上面跑出来的结果
+    
+    result =  model.evalution(
+        dataloader = data_resource.test_loader, 
+        encoder = encoder
+    )
+
+    logger.debug(result)
+    
