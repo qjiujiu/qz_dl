@@ -5,8 +5,9 @@ from tqdm import tqdm
 from config.params_parser.parser import ArgsParser
 from config.logger import logger
 from utils.models import pick_model
-from config.datasets.dataset_instance import mal_api
 from config.params_parser.params_template import NlpCfgParams
+from config.datasets.datasrc.text_datasrc import TextDataSrc
+from utils import io
 
 def save_embeddings(embeddings, labels, save_dir, file_name):
     """保存嵌入表示"""
@@ -19,61 +20,58 @@ def save_embeddings(embeddings, labels, save_dir, file_name):
 
 def get_embeding(cfg: NlpCfgParams):
     # 文件路径
-    data_dir = "data/malapi2019/preprocessed"
+    cache_dir = "data/malapi2019/preprocessed"
     save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/clean-exam"
+    
+    file_names = ['train_texts.pkl', 'test_texts.pkl', 'train_labels.pkl', 'test_labels.pkl', 'vocab.pkl']
+    cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
 
-    # 检查是否已有缓存的嵌入
-    if os.path.exists(os.path.join(save_dir, "train_embeddings.pkl")) and os.path.exists(os.path.join(save_dir, "test_embeddings.pkl")):
-        logger.debug("嵌入表示缓存文件已存在，直接加载缓存...")
-        return  # 缓存已存在，直接返回
+    if cache_files_exist:
+        logger.debug("📦 正在缓存 malapi_cleanexm 干净嵌入数据集...")
 
-    # 加载文本数据和标签
-    try:
-        with open(os.path.join(data_dir, "train_texts.pkl"), "rb") as f:
-            train_texts = pickle.load(f)
-        with open(os.path.join(data_dir, "test_texts.pkl"), "rb") as f:
-            test_texts = pickle.load(f)
-        with open(os.path.join(data_dir, "train_labels.pkl"), "rb") as f:
-            train_labels = pickle.load(f)
-        with open(os.path.join(data_dir, "test_labels.pkl"), "rb") as f:
-            test_labels = pickle.load(f)
-        with open(os.path.join(data_dir, "vocab.pkl"), "rb") as f:
-            vocab = pickle.load(f)
-    except FileNotFoundError as e:
-        logger.error(f"文件加载失败: {e}")
+        data_resource = TextDataSrc.load_dataset(
+            dataset_name="malapi", 
+            batch_size=cfg.batch_size, 
+        )
+
+        device = torch.device(cfg.device) 
+
+        # 加载权重模型
+        model = pick_model(cfg, cfg.checkpoint_path)
+        model = model.to(device)
+
+        print("生成训练集的干净嵌入...")
+        train_embeddings = []
+        for texts, labels in tqdm(data_resource.train_loader, desc="Training data", unit="batch"):
+            texts = texts.to(device)
+            embedded = model.embed(texts)
+            # shape: [B, T, D]
+
+            # 拆分每个样本，保存为 list of [T, D]
+            for embed in embedded.unbind(0):  # unbind along batch dimension
+                train_embeddings.append(embed.cpu().detach().numpy())
+
+        with open(os.path.join(save_dir, "train_embeddings.pkl"), "wb") as f:
+            pickle.dump((train_embeddings, data_resource.y_train), f)
+
+        print("生成测试集的干净嵌入...")
+        test_embeddings = []
+        for texts, labels in tqdm(data_resource.test_loader, desc="Testing data", unit="batch"):
+            texts = texts.to(device)
+            embedded = model.embed(texts)
+            # shape: [B, T, D]
+
+            # 拆分每个样本，保存为 list of [T, D]
+            for embed in embedded.unbind(0):  # unbind along batch dimension
+                test_embeddings.append(embed.cpu().detach().numpy())
+
+        with open(os.path.join(save_dir, "test_embeddings.pkl"), "wb") as f:
+            pickle.dump((test_embeddings, data_resource.y_test), f)
+
+    else:
+        logger.debug("📦 原数据不存在在该路径")
         return
-    
-    logger.debug(f"加载了训练集和测试集样本，共 {len(train_texts)} 个训练样本和 {len(test_texts)} 个测试样本")
 
-    device = torch.device(cfg.device) 
-
-    # 加载权重模型
-    model = pick_model(cfg, cfg.checkpoint_path)
-    model = model.to(device)
-
-    train_dataset = mal_api.MalAPITextDataset(texts=train_texts, labels=train_labels, vocab=vocab)
-    test_dataset = mal_api.MalAPITextDataset(texts=test_texts, labels=test_labels, vocab=vocab)
-
-    # 获取嵌入表示并保存
-    logger.debug("获取训练集嵌入表示...")
-    train_embeddings = []
-    for texts, labels in tqdm(train_dataset, desc="Processing train texts"):
-        # 假设文本已被填充到正确的大小，直接传入模型
-        texts = texts.to(device)
-        embedded = model.embed(texts)  # [batch_size, max_len] 格式
-        train_embeddings.extend(embedded.cpu().detach().numpy())
-        
-    save_embeddings(train_embeddings, train_labels, save_dir, "train_embeddings.pkl")
-    
-    logger.debug("获取测试集嵌入表示...")
-    test_embeddings = []
-    for texts, labels in tqdm(test_dataset, desc="Processing test texts"):
-        texts = texts.to(device)
-        embedded = model.embed(texts)  # [batch_size, max_len] 格式
-        test_embeddings.extend(embedded.cpu().detach().numpy())
-    
-    
-    save_embeddings(test_embeddings, test_labels, save_dir, "test_embeddings.pkl")
 
 # python mal_api_embed.py --checkpoint-path checkpoints/2025-07-07/LSTMTextClassifier/20250707-1933-e1404e59_weights.pth --model lstm  --batch-size 8 --epochs 30 --lr 0.001 --dropout-prob 0.5  --embedding-dim 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
 if __name__ == "__main__":
