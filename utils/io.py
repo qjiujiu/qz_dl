@@ -27,9 +27,9 @@ def save_model_weights(model, fpath):
         
         # 保存模型状态字典
         torch.save(model.state_dict(), fpath)
-        logger.info(f"模型权重已成功保存至: {fpath}")
+        logger.success(f"模型权重已成功保存至: {fpath}")
     except Exception as e:
-        logger.info(f"保存模型权重时出错: {e}")
+        logger.error(f"保存模型权重时出错: {e}")
 
 
 def load_model_weights(model, load_path, device='cpu'):
@@ -41,9 +41,9 @@ def load_model_weights(model, load_path, device='cpu'):
         
         # 加载权重到模型中
         model.load_state_dict(state_dict)
-        logger.info(f"模型权重已成功加载自: {load_path}")
+        logger.success(f"模型权重已成功加载自: {load_path}")
         return model
     except Exception as e:
         # 出错时返回原始未加载权重的模型
-        logger.info(f"加载模型权重时出错: {e}")
+        logger.error(f"加载模型权重时出错: {e}")
         return model  
