@@ -35,20 +35,15 @@ logger.is_debug(True)
 if __name__ == "__main__":
     cfg =  ArgsParser().create_nlp_config()
     model = pick_model(cfg, cfg.checkpoint_path)
-    logger.debug(
-        f"模型结构: {model}"
-        f"预测头层数: {cfg.L + 1}"
-    )
-
-
     data_resource = TextDataSrc.load_dataset(
         dataset_name="malapi", 
         batch_size=cfg.batch_size, 
     )
 
-    logger.debug(f"本轮训练的超参数设置: {cfg}")
+    logger.debug(f"超参数设置: {cfg}")
+    logger.debug(f"模型结构: {model}")
     logger.debug(f"使用的训练数据规模: {data_resource}")    
-
+    
 
     # 定义损失函数和优化器
     criterion = nn.CrossEntropyLoss()
@@ -58,14 +53,12 @@ if __name__ == "__main__":
         .setup_loss(criterion)\
         .setup_optimizer(optimizer)
 
-    # 如果开启向量模式，会通过 encoder 来将索引转为向量，再把向量丢给 model
+    # 如果开启向量模式，会通过 encoder 来将索引转为向量，否则会使用模型自带的嵌入层
     encoder = pick_embedding_encoder(cfg, cfg.load_path)
-    logger.debug(
-        f"是否开启 embedding 模式: {cfg.only_embed}"      # 是否开启向量模式
-        f"当前使用外部 encoder: {encoder}"                # 若不开启默认为空
-    )
+    logger.debug(f"当前引用的外部的 encoder: {encoder}")
     
-    # 训练模式，默认使用训练模式，其的最后一轮评估的结果就是测试集上面跑出来的结果
+    
+    # 训练模式，默认使用该模式，其最后一轮评估的结果就是测试集上面跑出来的结果
     if cfg.x == 1:         
         model.train_multiple_epochs(
             loader = data_resource.train_loader, 
@@ -80,5 +73,6 @@ if __name__ == "__main__":
             dataloader = data_resource.test_loader, 
             encoder = encoder
         )
-        logger.debug(result)
+        logger.debug(f"模型权重来自: {cfg.checkpoint_path}")
+        logger.debug(f"测试集评估结果: {result}")
     
