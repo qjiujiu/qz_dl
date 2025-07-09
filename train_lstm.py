@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # 如果开启向量模式，会通过 encoder 来将索引转为向量，再把向量丢给 model
     encoder = pick_embedding_encoder(cfg, cfg.load_path)
     logger.debug(
-        f"是否开启 embedding 模式: {cfg.only_embed}"     # 是否开启向量模式
+        f"是否开启 embedding 模式: {cfg.only_embed}"      # 是否开启向量模式
         f"当前使用外部 encoder: {encoder}"                # 若不开启默认为空
     )
     

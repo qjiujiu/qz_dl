@@ -158,8 +158,10 @@ def save_fgsm_embeddings(model, data_resource, cfg: AdvCfgParams):
  
 
 
-
-# python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-08/LSTMTextClassifier/20250708-0840-11838954_weights.pth
+"""
+chenzc: 
+    python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth
+""" 
 if __name__ == "__main__":
     # 加载配置和数据
     cfg = ArgsParser().create_adv_config()

@@ -3,6 +3,10 @@ import torch.nn as nn
 from torch import Tensor
 from models.classisifier import ClassifierBaseModel
 
+from config.logger import logger
+
+
+
 
 class LSTMTextClassifier(ClassifierBaseModel):
     def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 0, **kwargs):
