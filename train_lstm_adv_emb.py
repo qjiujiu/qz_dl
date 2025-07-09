@@ -14,7 +14,7 @@ from utils.models import (
 
 logger.is_debug(True)
 
-# python train_lstm_adv_emb.py --only-embed -ec default --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
+# python train_lstm_adv_emb.py --only-embed --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
 if __name__ == "__main__":
     cfg =  ArgsParser().create_nlp_config()
     model = pick_model(cfg, cfg.checkpoint_path)
@@ -41,12 +41,14 @@ if __name__ == "__main__":
         .setup_loss(criterion)\
         .setup_optimizer(optimizer)
 
-    
+
     # 如果开启向量模式，会通过 encoder 来将索引转为向量，再把向量丢给 model
+    # 假设用户没有指定任何的词嵌入模型来做 encoder，会默认使用恒等映射来做 encoder，从而跳过模型自带的嵌入层
+    
     encoder = pick_embedding_encoder(cfg, cfg.load_path)
     logger.debug(
-        f"是否开启 embedding 模式: {cfg.only_embed}"     # 是否开启向量模式, 开启则不使用内置嵌入模型
-        f"当前使用外部 encoder: {encoder}"               # 若不开启默认为空
+        f"是否开启 embedding 模式: {cfg.only_embed}\n"  
+        f"当前使用外部 encoder: {encoder}"
     )
     
     # 最后一轮评估的结果就是测试集上面跑出来的结果

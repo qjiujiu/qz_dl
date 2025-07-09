@@ -99,8 +99,7 @@ def load(text_path, labels_path, cache_dir='data/malapi2019/preprocessed', test_
 
     return train_texts, test_texts, train_labels, test_labels, vocab # train_dataset, test_dataset, vocab
 
-def load_fgsmemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm/"):
-    
+def load_fgsmemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm/"): 
     file_names = ['train_adv_embeddings.pkl', 'test_adv_embeddings.pkl']
     cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
     if cache_files_exist:
