@@ -10,6 +10,8 @@ from utils import io
 from typing import Union
 from config.logger import logger
 import torch
+import torch.nn as nn
+
 
 def pick_model(cfg: CommonCfgParams, load_path: str = None):
     """ 根据 model_name 返回对应的模型实例
@@ -47,9 +49,6 @@ def pick_embedding_encoder(cfg: NlpCfgParams, load_path: str = None):
     """
     encoder = None
 
-    if not cfg.only_embed:
-        return encoder
-    
     # 使用预训练模型原先的 embedding 模块来做转化
     if cfg.encoder == "default": 
         model = pick_model(cfg, load_path)
@@ -61,4 +60,9 @@ def pick_embedding_encoder(cfg: NlpCfgParams, load_path: str = None):
 
         return encoder
     
+    # 兜底策略
+    # 如果开启向量模式，但是没有指定任何外部 encoder，此时会用恒等映射模块来做 encoder，相当于跳过了原始模型的 embedding 模块
+    if cfg.only_embed:
+        return nn.Identity()
+
     return encoder
