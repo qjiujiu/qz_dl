@@ -85,73 +85,81 @@ class AdversarialAttack:
 
 def save_pgd_embeddings(model, data_resource, cfg: AdvCfgParams):
     save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-pgd"
-    """生成并保存训练集和测试集的对抗嵌入表示"""
     os.makedirs(save_dir, exist_ok=True)
 
     # 获取训练集对抗嵌入
-    print("生成训练集的pgd对抗嵌入...")
+    print("生成训练集的 PGD 对抗嵌入...")
     train_adv_embeddings = []
     for texts, labels in tqdm(data_resource.train_loader, desc="Training data", unit="batch"):
         adv_embeds = AdversarialAttack(model, cfg).pgd_attack(texts, labels)
-        flattened_embeds = adv_embeds.flatten(0, 1)  # 压平第一个和第二个维度，保留 embedding_size
-        train_adv_embeddings.append(flattened_embeds.cpu().detach().numpy())
-    
+        # shape: [B, T, D]
+
+        # 拆分每个样本，保存为 list of [T, D]
+        for embed in adv_embeds.unbind(0):  # unbind along batch dimension
+            train_adv_embeddings.append(embed.cpu().detach().numpy())
+
     # 保存训练集对抗嵌入
     with open(os.path.join(save_dir, "train_adv_embeddings.pkl"), "wb") as f:
         pickle.dump((train_adv_embeddings, data_resource.y_train), f)
 
-    print("训练集的pgd对抗嵌入已保存。")
+    print("训练集的 PGD 对抗嵌入已保存。")
 
     # 获取测试集对抗嵌入
-    print("生成测试集的pgd对抗嵌入...")
+    print("生成测试集的 PGD 对抗嵌入...")
     test_adv_embeddings = []
     for texts, labels in tqdm(data_resource.test_loader, desc="Testing data", unit="batch"):
         adv_embeds = AdversarialAttack(model, cfg).pgd_attack(texts, labels)
-        flattened_embeds = adv_embeds.flatten(0, 1)  # 压平第一个和第二个维度，保留 embedding_size
-        test_adv_embeddings.append(flattened_embeds.cpu().detach().numpy())
-    
+        # shape: [B, T, D]
+
+        # 拆分每个样本，保存为 list of [T, D]
+        for embed in adv_embeds.unbind(0):  # unbind along batch dimension
+            test_adv_embeddings.append(embed.cpu().detach().numpy())
+
     # 保存测试集对抗嵌入
     with open(os.path.join(save_dir, "test_adv_embeddings.pkl"), "wb") as f:
         pickle.dump((test_adv_embeddings, data_resource.y_test), f)
 
-    print("测试集的pgd对抗嵌入已保存。")
+    print("测试集的 PGD 对抗嵌入已保存。")
+
 
 def save_fgsm_embeddings(model, data_resource, cfg: AdvCfgParams):
     save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm"
-    """生成并保存训练集和测试集的 FGSM 对抗嵌入表示"""
     os.makedirs(save_dir, exist_ok=True)
 
     # 获取训练集对抗嵌入
-    print("生成训练集的fgsm对抗嵌入...")
+    print("生成训练集的 FGSM 对抗嵌入...")
     train_adv_embeddings = []
     for texts, labels in tqdm(data_resource.train_loader, desc="Training data", unit="batch"):
         adv_embeds = AdversarialAttack(model, cfg).fgsm_attack(texts, labels)
-        flattened_embeds = adv_embeds.flatten(0, 1)  # 压平第一个和第二个维度，保留 embedding_size
-        # 转换为 numpy 数组，减少内存占用
-        train_adv_embeddings.append(flattened_embeds.cpu().detach().numpy())
-
+        # shape: [B, T, D]
+        # 拆分每个样本，存为 list of [T, D]
+        for embed in adv_embeds.unbind(0):  # unbind along batch dimension
+            train_adv_embeddings.append(embed.cpu().detach().numpy())
     with open(os.path.join(save_dir, "train_adv_embeddings.pkl"), "wb") as f:
         pickle.dump((train_adv_embeddings, data_resource.y_train), f)
 
-    print("训练集的fgsm对抗嵌入已保存。")
+    print("训练集的 FGSM 对抗嵌入已保存。")
 
     # 获取测试集对抗嵌入
-    print("生成测试集的fgsm对抗嵌入...")
+    print("生成测试集的 FGSM 对抗嵌入...")
     test_adv_embeddings = []
     for texts, labels in tqdm(data_resource.test_loader, desc="Testing data", unit="batch"):
         adv_embeds = AdversarialAttack(model, cfg).fgsm_attack(texts, labels)
-        flattened_embeds = adv_embeds.flatten(0, 1)  # 压平第一个和第二个维度，保留 embedding_size
-        # 转换为 numpy 数组，减少内存占用
-        test_adv_embeddings.append(flattened_embeds.cpu().detach().numpy())
+        # shape: [B, T, D]
+
+        # 拆分每个样本，保存为 list of [T, D]
+        for embed in adv_embeds.unbind(0):  # unbind along batch dimension
+            test_adv_embeddings.append(embed.cpu().detach().numpy())
 
     with open(os.path.join(save_dir, "test_adv_embeddings.pkl"), "wb") as f:
         pickle.dump((test_adv_embeddings, data_resource.y_test), f)
 
-    print("测试集的fgsm对抗嵌入已保存。")
+    print("测试集的 FGSM 对抗嵌入已保存。")
  
 
-# python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-08/LSTMTextClassifier/20250708-1008-99ce270c_weights.pth
 
+
+# python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-08/LSTMTextClassifier/20250708-0840-11838954_weights.pth
 if __name__ == "__main__":
     # 加载配置和数据
     cfg = ArgsParser().create_adv_config()
@@ -163,5 +171,6 @@ if __name__ == "__main__":
     model = pick_model(cfg, cfg.checkpoint_path)
 
     # 保存对抗嵌入
-    save_pgd_embeddings(model, data_resource, cfg)
     save_fgsm_embeddings(model, data_resource, cfg)
+    save_pgd_embeddings(model, data_resource, cfg)
+    
