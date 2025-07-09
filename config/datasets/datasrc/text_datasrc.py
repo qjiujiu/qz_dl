@@ -77,11 +77,11 @@ class TextDataSrc:
             返回一个DataResource 模块，包含两个 loader
         """
         if dataset_name == "malapi":
-            return load_malapi(dataset_name, batch_size = 8)
+            return load_malapi(dataset_name, batch_size = batch_size)
         elif dataset_name == "malapi_fgsmemb":
-            return load_malapi_fgsmemb(dataset_name, batch_size = 8)
+            return load_malapi_fgsmemb(dataset_name, batch_size = batch_size)
         elif dataset_name == "malapi_pgdemb":
-            return load_malapi_pgdemb(dataset_name, batch_size = 8)
+            return load_malapi_pgdemb(dataset_name, batch_size = batch_size)
         elif dataset_name == "malapi_cleanemb":
-            return load_malapi_cleanemb(dataset_name, batch_size = 8)
+            return load_malapi_cleanemb(dataset_name, batch_size = batch_size)
     
