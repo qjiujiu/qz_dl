@@ -122,3 +122,15 @@ def load_pgdemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/advex
         test_texts, test_labels = test_data
         
     return train_texts, test_texts, train_labels, test_labels
+
+def load_cleanemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/clean-exam/"):
+    file_names = ['train_embeddings.pkl', 'test_embeddings.pkl']
+    cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
+    if cache_files_exist:
+        logger.debug("📦 malapi_cleanemd 已有缓存，正在加载缓存数据集...")        
+        train_data = io.read_pickle(os.path.join(cache_dir, file_names[0]))  # 读取训练集
+        test_data = io.read_pickle(os.path.join(cache_dir, file_names[1]))  # 读取测试集
+        train_texts, train_labels = train_data
+        test_texts, test_labels = test_data
+        
+    return train_texts, test_texts, train_labels, test_labels

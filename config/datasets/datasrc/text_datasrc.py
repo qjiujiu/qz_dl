@@ -54,6 +54,22 @@ def load_malapi_pgdemb(dataset_name, batch_size = 8):
     except ModuleNotFoundError:
         raise ValueError(f"Dataset '{dataset_name}' not found in 'datasrc' modules!")
 
+def load_malapi_cleanemb(dataset_name, batch_size = 8):
+    try:
+        X_train, X_test, y_train, y_test  = mal_api.load_cleanemb()
+        train_dataset = mal_api.MalAPIEmbedDataset(embeddings=X_train, labels=y_train)
+        test_dataset = mal_api.MalAPIEmbedDataset(embeddings=X_test, labels=y_test)
+        return DataResource(
+            train_dataset=train_dataset, 
+            test_dataset=test_dataset, 
+            batch_size=batch_size,
+            X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test
+        )
+    
+    except ModuleNotFoundError:
+        raise ValueError(f"Dataset '{dataset_name}' not found in 'datasrc' modules!")
+
+
 class TextDataSrc:
     @staticmethod
     def load_dataset(dataset_name, batch_size = 8, encoder = None):
@@ -66,4 +82,6 @@ class TextDataSrc:
             return load_malapi_fgsmemb(dataset_name, batch_size = 8)
         elif dataset_name == "malapi_pgdemb":
             return load_malapi_pgdemb(dataset_name, batch_size = 8)
+        elif dataset_name == "malapi_cleanemb":
+            return load_malapi_cleanemb(dataset_name, batch_size = 8)
     

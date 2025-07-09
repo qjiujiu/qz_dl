@@ -15,6 +15,7 @@ from utils.models import (
 logger.is_debug(True)
 
 # python train_lstm_adv_emb.py --only-embed --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
+
 if __name__ == "__main__":
     cfg =  ArgsParser().create_nlp_config()
     model = pick_model(cfg, cfg.checkpoint_path)
@@ -22,7 +23,6 @@ if __name__ == "__main__":
         f"模型结构: {model}"
         f"预测头层数: {cfg.L + 1}"
     )
-
 
     data_resource = TextDataSrc.load_dataset(
         dataset_name="malapi_fgsmemb", 
