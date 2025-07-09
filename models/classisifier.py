@@ -133,7 +133,7 @@ class ClassifierBaseModel(ABC, nn.Module):
 
         with torch.no_grad(), tqdm(dataloader, desc="Evaluating", unit="batch") as tepoch:
             for batch in tepoch:
-                outputs = self.eval_one_step(batch)
+                outputs = self.eval_one_step(batch, **kwargs)
                 y_ = torch.argmax(outputs, dim=1)
 
                 _, y  = batch
@@ -166,7 +166,7 @@ class ClassifierBaseModel(ABC, nn.Module):
                 tepoch.set_postfix(loss=total_loss / (tepoch.n + 1))  # 更新进度条的损失
             
             if val_loader is not None:
-                metrics = self.evalution(val_loader)
+                metrics = self.evalution(val_loader, **kwargs)
                 
         total_loss /= len(dataloader)
         return total_loss, metrics
