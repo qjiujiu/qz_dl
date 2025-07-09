@@ -14,8 +14,7 @@ from utils.models import (
 
 logger.is_debug(True)
 
-# python train_lstm_adv_emb.py --only-embed --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
-
+# python train_lstm_adv_emb.py --only-embed --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth
 if __name__ == "__main__":
     cfg =  ArgsParser().create_nlp_config()
     model = pick_model(cfg, cfg.checkpoint_path)
