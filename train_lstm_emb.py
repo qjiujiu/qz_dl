@@ -15,12 +15,12 @@ logger.is_debug(True)
 
 """ 使用说明
     - 文本输入: 
-        训练: python train_lstm_emb.py -ec id --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 
-        测试: python train_lstm_emb.py -ec id --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth -x 0 --dataset malapi
+        训练: python train_lstm_emb.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi
+        测试: python train_lstm_emb.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth -x 0
 
     - Embedding 输入
-        训练: python train_lstm_emb.py -ec id --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
-        测试: python train_lstm_emb.py -ec id --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth -x 0 --dataset malapi_fgsmemb
+        训练: python train_lstm_emb.py -ec id --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb
+        测试: python train_lstm_emb.py -ec id --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth -x 0
 
 
     其它说明:  
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     
     # 如果开启向量模式，会通过 encoder 来将索引转为向量，否则会使用模型自带的嵌入层
     encoder = pick_embedding_encoder(cfg, cfg.load_path)
-    logger.debug(f"当前引用的外部的 encoder: {encoder}")
+    logger.debug(f"当前引用的外部的 encoder: {encoder}, 权重来自: {cfg.load_path}")
 
 
     # 训练模式，默认使用该模式，其最后一轮评估的结果就是测试集上面跑出来的结果
