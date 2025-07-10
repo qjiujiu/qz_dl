@@ -60,9 +60,9 @@ class ArgsParser:
         parser.add_argument("--n", type=int, default=1, help="预留超参数")
         parser.add_argument("--L", type=int, default=0, help="预留超参数")
         parser.add_argument("--t", type=int, default=1, help="预留超参数")
-        parser.add_argument("--x", type=int, default=1, help="预留超参数")
+        parser.add_argument("--x", "-x", type=int, default=1, help="预留超参数")
         
-            # 添加对抗攻击相关的超参数
+        # 添加对抗攻击相关的超参数
         parser.add_argument("--fgsm_epsilon", type=float, default=0.1, help="FGSM 扰动强度")
         parser.add_argument("--pgd_epsilon", type=float, default=0.1, help="PGD 最大扰动范围")
         parser.add_argument("--pgd_alpha", type=float, default=0.01, help="PGD 每步更新幅度")

@@ -172,7 +172,7 @@ class ClassifierBaseModel(ABC, nn.Module):
         return total_loss, metrics
 
 
-    def train_multiple_epochs(self, loader,val_loader = None, epochs = 10, **kwargs):
+    def train_multiple_epochs(self, loader, val_loader = None, epochs = 10, **kwargs):
         """ 训练多个epoch
         """
         self._generate_log_id()

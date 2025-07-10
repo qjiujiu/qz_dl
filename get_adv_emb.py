@@ -173,12 +173,18 @@ def save_fgsm_embeddings(model, data_resource, cfg: AdvCfgParams, encoder = None
  
 
 
+""" 
+chenzc: 
+    python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth
+""" 
+
 # 默认嵌入层
 # python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth
 # word2vec
 # python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-10/LSTMTextClassifier/20250710-1424-ee94d563_weights.pth -ec word2vec -lp ./checkpoints/malapiwv.wordvectors
 
 # 不同的命令需要将嵌入数据保存在不同的路径，下文需要修改对应路径！！！！！！！！！！！！
+
 
 if __name__ == "__main__":
     # 加载配置和数据

@@ -49,6 +49,7 @@ class TextDataSrc:
         """
         if dataset_name == "malapi":
             return load_malapi(dataset_name, batch_size = batch_size)
+            return load_malapi(dataset_name, batch_size = batch_size)
         elif dataset_name == "malapi_fgsmemb":
             return load_malapi_emb(dataset_name, cache_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm/", batch_size = batch_size)
         elif dataset_name == "malapi_pgdemb":

@@ -17,9 +17,15 @@ logger.is_debug(True)
 
 """ 使用说明
     - 文本输入: 
-        python test_lstm_clean_emb.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth
+        - chenzc
+            python test_lstm_clean_emb.py -ec id --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth
+            
+        python test_lstm_clean_emb.py -ec id --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth
 
     - Embedding 输入
+        - chenzc
+            python test_lstm_clean_emb.py --only-embed --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth
+            
         python test_lstm_clean_emb.py --only-embed --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth
 
     若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数
@@ -56,12 +62,9 @@ if __name__ == "__main__":
         .setup_optimizer(optimizer)
 
     
-    # 如果开启向量模式，会通过 encoder 来将索引转为向量，再把向量丢给 model
+    # 如果开启向量模式，会通过 encoder 来将索引转为向量，否则会使用模型自带的嵌入层
     encoder = pick_embedding_encoder(cfg, cfg.load_path)
-    logger.debug(
-        f"是否开启 embedding 模式: {cfg.only_embed}"     # 是否开启向量模式
-        f"当前使用外部 encoder: {encoder}"                # 若不开启默认为空
-    )
+    logger.debug(f"当前引用的外部的 encoder: {encoder}")
     
     # 最后一轮评估的结果就是测试集上面跑出来的结果
     
