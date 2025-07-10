@@ -7,6 +7,7 @@ sentences = LineSentence('./data/malapi2019/all_analysis_data.txt')
 
 model = FastText(vector_size=128, window=3, min_count=1)
 model.build_vocab(corpus_iterable=sentences)
+
 # 训练，添加 tqdm 进度条（按 epoch）
 epochs = 10
 for epoch in range(epochs):
