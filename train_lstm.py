@@ -16,11 +16,16 @@ from utils.models import (
 logger.is_debug(True)
 
 """ 使用说明
-    - 文本输入: 
+    - 文本输入
+        默认嵌入: 
         python train_lstm.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
-
+        word2vec嵌入：
+        python train_lstm.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -ec word2vec -lp ./checkpoints/malapiwv.wordvectors
+        fasttext嵌入：
+        python train_lstm.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -ec fasttext -lp ./checkpoints/malapift.wordvectors
+    
     - Embedding 输入
-        python train_lstm.py --only-embed -ec default --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
+        python train_lstm.py --only-embed --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278
         
         
     若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数
@@ -58,8 +63,10 @@ if __name__ == "__main__":
         .setup_optimizer(optimizer)
 
     
+    # print(data_resource.vocab)
+
     # 如果开启向量模式，会通过 encoder 来将索引转为向量，再把向量丢给 model
-    encoder = pick_embedding_encoder(cfg, cfg.load_path)
+    encoder = pick_embedding_encoder(cfg, cfg.load_path, vocab=data_resource.vocab)
     logger.debug(
         f"是否开启 embedding 模式: {cfg.only_embed}"     # 是否开启向量模式
         f"当前使用外部 encoder: {encoder}"                # 若不开启默认为空
