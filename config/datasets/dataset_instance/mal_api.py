@@ -42,7 +42,6 @@ class MalAPIEmbedDataset(Dataset):
         return len(self.embeddings)
 
     def __getitem__(self, idx):
-        # print(torch.tensor(self.embeddings[idx]).shape)
         return torch.tensor(self.embeddings[idx]), torch.tensor(self.labels[idx])
 
 
