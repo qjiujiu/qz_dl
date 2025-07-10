@@ -7,112 +7,100 @@ from config.logger import logger
 from utils.models import pick_model
 from config.datasets.datasrc.text_datasrc import TextDataSrc
 from config.params_parser.params_template import AdvCfgParams
+
 from tqdm import tqdm
+from contextlib import contextmanager
+
+@contextmanager
+def disable_dropout(model):
+    """临时禁用模型 Dropout """
+    original_p = model.dropout.p 
+    try:
+        model.dropout.p = 0.0
+        yield  
+    finally:
+        model.dropout.p = original_p 
 
 class AdversarialAttack:
     def __init__(self, model, cfg: AdvCfgParams):
-        self.model = model
+        self.model = model.to(cfg.device)
         self.fgsm_epsilon = cfg.fgsm_epsilon
         self.pgd_epsilon = cfg.pgd_epsilon
         self.pgd_alpha = cfg.pgd_alpha
         self.pgd_iters = cfg.pgd_iters
         self.device = cfg.device  
-        self.model.to(self.device)
 
-    def pgd_attack(self, texts, labels):
-        """
-        生成 PGD 对抗样本 (针对模型的 Embedding 层的输出)
-        """
-        # 设置模型为训练模式，以支持反向传播
-        self.model.train()
+    def pgd_attack(self, embed, labels, epsilon = 0.1, alpha=0.01, iters = 5):
+        with disable_dropout(self.model):
+            embed = embed.clone().detach().to(self.device).requires_grad_(True)
+            labels = labels.to(self.device)  
 
-        # 临时禁用 dropout
-        original_dropout_p = self.model.dropout.p
-        self.model.dropout.p = 0.0
+            self.model.train()
 
-        # 将输入数据和标签传入设备
-        texts = texts.to(self.device)  
-        labels = labels.to(self.device)  
+            for _ in range(iters):
+                self.model.zero_grad()
+                output = self.model.forward(adv)
 
-        # 获取初始嵌入表示
-        adv = self.model.embed(texts).detach().requires_grad_(True)  # 初始化对抗样本
-        ori = adv.detach()
+                loss = F.cross_entropy(output, labels)
+                loss.backward()
 
-        for _ in range(self.pgd_iters):
-            self.model.zero_grad()
-            # 使用当前的对抗样本进行前向传播
-            output = self.model.forward(adv)
-            # 计算交叉熵损失
-            loss = F.cross_entropy(output, labels)
-            loss.backward()
-            # 计算对抗扰动
-            adv = adv + self.pgd_alpha * adv.grad.sign()  # 依据梯度更新对抗样本
-            eta = torch.clamp(adv - ori, -self.pgd_epsilon, self.pgd_epsilon)  # 限制扰动范围
-            adv = torch.clamp(ori + eta, 0, 1).detach_().requires_grad_(True)  # 更新对抗样本
+                adv = adv + alpha * adv.grad.sign()
+                eta = torch.clamp(adv - embed, -epsilon, epsilon)
+                adv = torch.clamp(embed + eta, 0, 1).detach_().requires_grad_(True)  # 更新对抗样本
 
-        # 恢复模型的 dropout 设置
-        self.model.dropout.p = original_dropout_p
         return adv.detach()
     
-    def fgsm_attack(self, texts, labels):
-        """
-        生成 FGSM 对抗样本 (针对模型的 Embedding 层的输出)
-        """
-        # 设置模型为训练模式，以支持反向传播
-        self.model.train()
+    def fgsm_attack(self, embed, labels, epsilon = 0.1):
+        with disable_dropout(self.model):
+            embed = embed.clone().detach().to(self.device).requires_grad_(True)
+            labels = labels.to(self.device)
+        
+            self.model.train()
+            output = self.model.forward(embed)
+            loss = F.cross_entropy(output, labels)
+            loss.backward()
+    
+            adv_emb = embed + epsilon * embed.grad.sign()  # 依据梯度更新对抗样本
 
-        # 临时禁用 dropout
-        original_dropout_p = self.model.dropout.p
-        self.model.dropout.p = 0.0
-
-        # 将输入数据和标签传入设备
-        texts = texts.to(self.device)
-        labels = labels.to(self.device)
-
-        # 获取初始嵌入表示
-        adv = self.model.embed(texts).detach().requires_grad_(True)  # 初始化对抗样本
-        # 前向传播
-        output = self.model.forward(adv)
-        # 计算损失并反向传播
-        loss = F.cross_entropy(output, labels)
-        loss.backward()
-        # 生成对抗样本
-        adv_emb = adv + self.fgsm_epsilon * adv.grad.sign()  # 依据梯度更新对抗样本
-
-        # 恢复模型的 dropout 设置
-        self.model.dropout.p = original_dropout_p
         return adv_emb.detach()
 
+
+# TODO 修改下面两个函数，先把 文本张量变成embedding张量，再把embedding张量丢给攻击算法生成的数据集，生成的数据集不区分训练和测试
 def save_pgd_embeddings(model, data_resource, cfg: AdvCfgParams):
     save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-pgd"
     os.makedirs(save_dir, exist_ok=True)
 
     # 获取训练集对抗嵌入
     print("生成训练集的 PGD 对抗嵌入...")
-    train_adv_embeddings = []
+    tot_vectors, tot_labels = [], []
+    attacker = AdversarialAttack(model, cfg)
     for texts, labels in tqdm(data_resource.train_loader, desc="Training data", unit="batch"):
-        adv_embeds = AdversarialAttack(model, cfg).pgd_attack(texts, labels)
-        # shape: [B, T, D]
+        embeds = model.embed(texts)
 
         # 拆分每个样本，保存为 list of [T, D]
-        for embed in adv_embeds.unbind(0):  # unbind along batch dimension
-            train_adv_embeddings.append(embed.cpu().detach().numpy())
+        for embed in embeds.unbind(0):  # unbind along batch dimension
+            tot_vectors.append(embed.cpu().detach().numpy())
+        
+        tot_labels.extend(labels)
+
+
+    # TODO 下面开始也要这样修改的, 先把所有文本变成向量
 
     # 保存训练集对抗嵌入
     with open(os.path.join(save_dir, "train_adv_embeddings.pkl"), "wb") as f:
-        pickle.dump((train_adv_embeddings, data_resource.y_train), f)
+        pickle.dump((tot_vectors, data_resource.y_train), f)
 
     print("训练集的 PGD 对抗嵌入已保存。")
 
     # 获取测试集对抗嵌入
     print("生成测试集的 PGD 对抗嵌入...")
     test_adv_embeddings = []
-    for texts, labels in tqdm(data_resource.test_loader, desc="Testing data", unit="batch"):
-        adv_embeds = AdversarialAttack(model, cfg).pgd_attack(texts, labels)
+    for texts, tot_labels in tqdm(data_resource.test_loader, desc="Testing data", unit="batch"):
+        embeds = AdversarialAttack(model, cfg).pgd_attack(texts, tot_labels)
         # shape: [B, T, D]
 
         # 拆分每个样本，保存为 list of [T, D]
-        for embed in adv_embeds.unbind(0):  # unbind along batch dimension
+        for embed in embeds.unbind(0):  # unbind along batch dimension
             test_adv_embeddings.append(embed.cpu().detach().numpy())
 
     # 保存测试集对抗嵌入
