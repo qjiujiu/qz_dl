@@ -96,9 +96,8 @@ def pick_embedding_encoder(cfg: NlpCfgParams, load_path: str = None, vocab = Non
         return encoder
 
 
-    # 兜底策略
-    # 如果开启向量模式，但是没有指定任何外部 encoder，此时会用恒等映射模块来做 encoder，相当于跳过了原始模型的 embedding 模块
-    if cfg.only_embed:
+    # 此时会用恒等映射模块来做 encoder，相当于跳过了原始模型的 embedding 模块
+    if cfg.encoder == "id":
         return nn.Identity()
     
 

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from utils.get_config import load_config
-from datasets.adv_emb_loader import load_adversarial_dataset
+from config.datasets.adv_emb_loader import load_adversarial_dataset
 from config.logger import logger_initiate
 
 
