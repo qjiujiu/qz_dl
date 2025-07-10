@@ -4,10 +4,13 @@ import pickle
 import os
 from config.params_parser.parser import ArgsParser
 from config.logger import logger
-from utils.models import pick_model
 from config.datasets.datasrc.text_datasrc import TextDataSrc
 from config.params_parser.params_template import AdvCfgParams
 from tqdm import tqdm
+from utils.models import (
+    pick_model, 
+    pick_embedding_encoder
+)
 
 class AdversarialAttack:
     def __init__(self, model, cfg: AdvCfgParams):
@@ -16,10 +19,12 @@ class AdversarialAttack:
         self.pgd_epsilon = cfg.pgd_epsilon
         self.pgd_alpha = cfg.pgd_alpha
         self.pgd_iters = cfg.pgd_iters
-        self.device = cfg.device  
+        self.device = cfg.device
+        self.encoder = cfg.encoder
+        self.load_path = cfg.load_path
         self.model.to(self.device)
 
-    def pgd_attack(self, texts, labels):
+    def pgd_attack(self, texts, labels, encoder = None):
         """
         生成 PGD 对抗样本 (针对模型的 Embedding 层的输出)
         """
@@ -29,13 +34,19 @@ class AdversarialAttack:
         # 临时禁用 dropout
         original_dropout_p = self.model.dropout.p
         self.model.dropout.p = 0.0
-
+        # 获取初始嵌入表示
+        if encoder:
+            adv = encoder(texts)
+            adv = adv.to(self.device)
+            adv.requires_grad_()
+        else:
+            texts = texts.to(self.device)
+            adv = self.model.embed(texts).detach().requires_grad_(True)  # 初始化对抗样本
+        
         # 将输入数据和标签传入设备
-        texts = texts.to(self.device)  
         labels = labels.to(self.device)  
 
         # 获取初始嵌入表示
-        adv = self.model.embed(texts).detach().requires_grad_(True)  # 初始化对抗样本
         ori = adv.detach()
 
         for _ in range(self.pgd_iters):
@@ -54,23 +65,27 @@ class AdversarialAttack:
         self.model.dropout.p = original_dropout_p
         return adv.detach()
     
-    def fgsm_attack(self, texts, labels):
+    def fgsm_attack(self, texts, labels, encoder = None):
         """
         生成 FGSM 对抗样本 (针对模型的 Embedding 层的输出)
         """
         # 设置模型为训练模式，以支持反向传播
         self.model.train()
-
         # 临时禁用 dropout
         original_dropout_p = self.model.dropout.p
         self.model.dropout.p = 0.0
-
-        # 将输入数据和标签传入设备
+        # 获取初始嵌入表示
+        if encoder:
+            adv = encoder(texts)
+            adv = adv.to(self.device)
+            adv.requires_grad_()
+        else:
+            texts = texts.to(self.device)
+            adv = self.model.embed(texts).detach().requires_grad_(True)  # 初始化对抗样本
+        
         texts = texts.to(self.device)
         labels = labels.to(self.device)
-
-        # 获取初始嵌入表示
-        adv = self.model.embed(texts).detach().requires_grad_(True)  # 初始化对抗样本
+        
         # 前向传播
         output = self.model.forward(adv)
         # 计算损失并反向传播
@@ -83,15 +98,15 @@ class AdversarialAttack:
         self.model.dropout.p = original_dropout_p
         return adv_emb.detach()
 
-def save_pgd_embeddings(model, data_resource, cfg: AdvCfgParams):
-    save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-pgd"
+def save_pgd_embeddings(model, data_resource, cfg: AdvCfgParams, encoder = None, save_dir = None):
+    
     os.makedirs(save_dir, exist_ok=True)
 
     # 获取训练集对抗嵌入
     print("生成训练集的 PGD 对抗嵌入...")
     train_adv_embeddings = []
     for texts, labels in tqdm(data_resource.train_loader, desc="Training data", unit="batch"):
-        adv_embeds = AdversarialAttack(model, cfg).pgd_attack(texts, labels)
+        adv_embeds = AdversarialAttack(model, cfg).pgd_attack(texts, labels, encoder=encoder)
         # shape: [B, T, D]
 
         # 拆分每个样本，保存为 list of [T, D]
@@ -122,15 +137,15 @@ def save_pgd_embeddings(model, data_resource, cfg: AdvCfgParams):
     print("测试集的 PGD 对抗嵌入已保存。")
 
 
-def save_fgsm_embeddings(model, data_resource, cfg: AdvCfgParams):
-    save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm"
+def save_fgsm_embeddings(model, data_resource, cfg: AdvCfgParams, encoder = None, save_dir = None):
+    
     os.makedirs(save_dir, exist_ok=True)
 
     # 获取训练集对抗嵌入
     print("生成训练集的 FGSM 对抗嵌入...")
     train_adv_embeddings = []
     for texts, labels in tqdm(data_resource.train_loader, desc="Training data", unit="batch"):
-        adv_embeds = AdversarialAttack(model, cfg).fgsm_attack(texts, labels)
+        adv_embeds = AdversarialAttack(model, cfg).fgsm_attack(texts, labels, encoder = encoder)
         # shape: [B, T, D]
         # 拆分每个样本，存为 list of [T, D]
         for embed in adv_embeds.unbind(0):  # unbind along batch dimension
@@ -158,8 +173,13 @@ def save_fgsm_embeddings(model, data_resource, cfg: AdvCfgParams):
  
 
 
-
+# 默认嵌入层
 # python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth
+# word2vec
+# python get_adv_emb.py --model lstm --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8 --max-len 200 --vocab-size 278 -cp checkpoints/2025-07-10/LSTMTextClassifier/20250710-1424-ee94d563_weights.pth -ec word2vec -lp ./checkpoints/malapiwv.wordvectors
+
+# 不同的命令需要将嵌入数据保存在不同的路径，下文需要修改对应路径！！！！！！！！！！！！
+
 if __name__ == "__main__":
     # 加载配置和数据
     cfg = ArgsParser().create_adv_config()
@@ -170,7 +190,14 @@ if __name__ == "__main__":
     # 加载预训练的模型
     model = pick_model(cfg, cfg.checkpoint_path)
 
-    # 保存对抗嵌入
-    save_fgsm_embeddings(model, data_resource, cfg)
-    save_pgd_embeddings(model, data_resource, cfg)
+    # 如果开启向量模式，会通过 encoder 来将索引转为向量，再把向量丢给 model
+    encoder = pick_embedding_encoder(cfg, cfg.load_path, vocab=data_resource.vocab)
+
+    # 保存默认层的对抗嵌入
+    # save_fgsm_embeddings(model, data_resource, cfg, encoder, save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm")
+    # save_pgd_embeddings(model, data_resource, cfg, encoder, save_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-pgd")
+
+    # 保存word2vec层的对抗嵌入
+    save_fgsm_embeddings(model, data_resource, cfg, encoder, save_dir = "data/malapi2019/emb-feature/malapi2vec_LSTM/advexam-fgsm")
+    save_pgd_embeddings(model, data_resource, cfg, encoder, save_dir = "data/malapi2019/emb-feature/malapi2vec_LSTM/advexam-pgd")
     
