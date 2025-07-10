@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from models.nlp.embed_mlp import MalMLP
 from models.nlp.conv_text import Conv1dTextClassifier
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
+from models.nlp.lstm_text_adv import LSTMTextAdvClassifier
 
 from config.params_parser.params_template import (
     CommonCfgParams, 
@@ -29,6 +29,15 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
             output_dim=cfg.output_dim,
             layers=cfg.L 
         )
+    elif cfg.model == 'lstm-adv':
+        model = LSTMTextAdvClassifier(
+            vocab_size=cfg.vocab_size,
+            embedding_dim=cfg.embedding_dim,
+            hidden_dim=cfg.hidden_dim,
+            bidirectional=True,
+            output_dim=cfg.output_dim,
+            layers=cfg.L 
+        )
     elif cfg.model == 'conv1d':
         model = Conv1dTextClassifier(
             vocab_size=cfg.vocab_size,
@@ -36,11 +45,7 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
             hidden_dim=cfg.hidden_dim,
             output_dim=cfg.output_dim
         )
-    elif cfg.model == 'mlp':
-        model = MalMLP(
-            embedding_dim=cfg.embedding_dim,
-            hidden_dim=cfg.hidden_dim, num_classes=cfg.output_dim
-        )
+    
     
     if model is None:
         raise ValueError(f"Unknown model name: {cfg.model}")

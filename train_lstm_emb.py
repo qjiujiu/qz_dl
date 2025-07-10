@@ -48,8 +48,8 @@ if __name__ == "__main__":
 
     # 定义损失函数和优化器
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=cfg.lr)
-
+    optimizer = optim.AdamW(model.parameters(), lr=cfg.lr)
+    
     model.setup_ctx(cfg)\
         .setup_loss(criterion)\
         .setup_optimizer(optimizer)

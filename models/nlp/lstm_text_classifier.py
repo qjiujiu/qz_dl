@@ -19,7 +19,7 @@ class LSTMTextClassifier(ClassifierBaseModel):
         
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True, bidirectional = bidirectional)
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.3)
         self.fc = self._build_fc(hidden_dim, output_dim, layers=layers)
 
     def embed(self, x: Tensor):
@@ -42,8 +42,10 @@ class LSTMTextClassifier(ClassifierBaseModel):
         # dropped_out.shape: torch.Size([8, 256])
         # output.shape: torch.Size([8, 8])
         lstm_out, (hidden, cell) = self.lstm(embedded)
-        hidden_out = hidden[-1]
-        dropped_out = self.dropout(hidden_out)
+        # [batch, 200, 256], [1, 8, 256], [1, 8, 256] 单向lstm
+        # [batch, 200, 512], [2, 8, 256], [2, 8, 256] 假设开启的双向lstm
+
+        dropped_out = self.dropout(hidden[0] + hidden[1])
         output = self.fc(dropped_out)
         return output
     
@@ -91,7 +93,6 @@ class LSTMTextClassifier(ClassifierBaseModel):
         x, y = x.to(self.device), y.to(self.device)
         y_ = self.forward(self.embed(x))
         return y_
-    
-    def train_multiple_epochs_adv(self, loader, val_loader=None, epochs=10, attack=None):
-        pass
-        
+
+    def evalution(self, dataloader, **kwargs):
+        return super().evalution(dataloader, **kwargs) 
