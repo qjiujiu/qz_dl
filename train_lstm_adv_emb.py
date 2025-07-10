@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     data_resource = TextDataSrc.load_dataset(
         dataset_name="malapi_fgsmemb", 
-        batch_size=cfg.batch_size, 
+        batch_size=cfg.batch_size
     )
 
     logger.debug(f"本轮训练的超参数设置: {cfg}")

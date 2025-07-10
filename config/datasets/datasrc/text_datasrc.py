@@ -23,45 +23,16 @@ def load_malapi(dataset_name, batch_size = 8):
     except ModuleNotFoundError:
         raise ValueError(f"Dataset '{dataset_name}' not found in 'datasrc' modules!")
 
-def load_malapi_fgsmemb(dataset_name, batch_size = 8):
-    try:
-        X_train, X_test, y_train, y_test  = mal_api.load_fgsmemb()
-        train_dataset = mal_api.MalAPIEmbedDataset(embeddings=X_train, labels=y_train)
-        test_dataset = mal_api.MalAPIEmbedDataset(embeddings=X_test, labels=y_test)
-        return DataResource(
-            train_dataset=train_dataset, 
-            test_dataset=test_dataset, 
-            batch_size=batch_size,
-            X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test
-        )
-    
-    except ModuleNotFoundError:
-        raise ValueError(f"Dataset '{dataset_name}' not found in 'datasrc' modules!")
-    
-    
-def load_malapi_pgdemb(dataset_name, batch_size = 8):
-    try:
-        X_train, X_test, y_train, y_test  = mal_api.load_pgdemb()
-        train_dataset = mal_api.MalAPIEmbedDataset(embeddings=X_train, labels=y_train)
-        test_dataset = mal_api.MalAPIEmbedDataset(embeddings=X_test, labels=y_test)
-        return DataResource(
-            train_dataset=train_dataset, 
-            test_dataset=test_dataset, 
-            batch_size=batch_size,
-            X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test
-        )
-    
-    except ModuleNotFoundError:
-        raise ValueError(f"Dataset '{dataset_name}' not found in 'datasrc' modules!")
 
-def load_malapi_cleanemb(dataset_name, batch_size = 8):
+def load_malapi_emb(dataset_name, cache_dir: str, batch_size: int = 8, **kwargs):
     try:
-        X_train, X_test, y_train, y_test  = mal_api.load_cleanemb()
+        X_train, X_test, y_train, y_test = mal_api.load_emb_from_cache(cache_dir=cache_dir, **kwargs)
         train_dataset = mal_api.MalAPIEmbedDataset(embeddings=X_train, labels=y_train)
         test_dataset = mal_api.MalAPIEmbedDataset(embeddings=X_test, labels=y_test)
+        
         return DataResource(
-            train_dataset=train_dataset, 
-            test_dataset=test_dataset, 
+            train_dataset=train_dataset,
+            test_dataset=test_dataset,
             batch_size=batch_size,
             X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test
         )
@@ -77,11 +48,20 @@ class TextDataSrc:
             返回一个DataResource 模块，包含两个 loader
         """
         if dataset_name == "malapi":
-            return load_malapi(dataset_name, batch_size = 8)
+            return load_malapi(dataset_name, batch_size = batch_size)
         elif dataset_name == "malapi_fgsmemb":
-            return load_malapi_fgsmemb(dataset_name, batch_size = 8)
+            return load_malapi_emb(dataset_name, cache_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm/", batch_size = batch_size)
         elif dataset_name == "malapi_pgdemb":
-            return load_malapi_pgdemb(dataset_name, batch_size = 8)
+            return load_malapi_emb(dataset_name, cache_dir = "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-pgd/", batch_size = batch_size)
         elif dataset_name == "malapi_cleanemb":
-            return load_malapi_cleanemb(dataset_name, batch_size = 8)
+            return load_malapi_emb(dataset_name, 
+                                   cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/clean-exam/", 
+                                   batch_size = batch_size,
+                                   train_file= "train_embeddings.pkl", 
+                                   test_file = "test_embeddings.pkl")
+        elif dataset_name == "malapi_wvlstm_fgsmemb":
+            return load_malapi_emb(dataset_name, cache_dir= "data/malapi2019/emb-feature/malapi2vec_LSTM/advexam-fgsm/", batch_size = batch_size)
+        elif dataset_name == "malapi_wvlstm_pgdemb":
+            return load_malapi_emb(dataset_name, cache_dir= "data/malapi2019/emb-feature/malapi2vec_LSTM/advexam-pgd/", batch_size = batch_size)
+
     

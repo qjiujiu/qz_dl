@@ -99,38 +99,28 @@ def load(text_path, labels_path, cache_dir='data/malapi2019/preprocessed', test_
 
     return train_texts, test_texts, train_labels, test_labels, vocab # train_dataset, test_dataset, vocab
 
-def load_fgsmemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-fgsm/"): 
-    file_names = ['train_adv_embeddings.pkl', 'test_adv_embeddings.pkl']
-    cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
-    if cache_files_exist:
-        logger.debug("📦 malapi_fgsmemd 已有缓存，正在加载缓存数据集...")
-        train_data = io.read_pickle(os.path.join(cache_dir, file_names[0]))  # 读取训练集
-        test_data = io.read_pickle(os.path.join(cache_dir, file_names[1]))  # 读取测试集
+
+def load_emb_from_cache(cache_dir: str, train_file: str = "train_adv_embeddings.pkl", test_file: str = "test_adv_embeddings.pkl"):
+    """
+    加载指定目录下的对抗样本或干净样本的嵌入缓存数据。
+    
+    参数:
+        cache_dir (str): 缓存目录路径
+        train_file (str): 训练集文件名（默认值适用于干净样本）
+        test_file (str): 测试集文件名（默认值适用于干净样本）
+
+    返回:
+        train_texts, test_texts, train_labels, test_labels
+    """
+    train_path = os.path.join(cache_dir, train_file)
+    test_path = os.path.join(cache_dir, test_file)
+    
+    if os.path.exists(train_path) and os.path.exists(test_path):
+        logger.debug(f"📦 已检测到缓存文件，正在加载：{cache_dir}")
+        train_data = io.read_pickle(train_path)
+        test_data = io.read_pickle(test_path)
         train_texts, train_labels = train_data
         test_texts, test_labels = test_data
-
-    return train_texts, test_texts, train_labels, test_labels
-
-def load_pgdemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/advexam-pgd/"):
-    file_names = ['train_adv_embeddings.pkl', 'test_adv_embeddings.pkl']
-    cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
-    if cache_files_exist:
-        logger.debug("📦 malapi_pgdemd 已有缓存，正在加载缓存数据集...")        
-        train_data = io.read_pickle(os.path.join(cache_dir, file_names[0]))  # 读取训练集
-        test_data = io.read_pickle(os.path.join(cache_dir, file_names[1]))  # 读取测试集
-        train_texts, train_labels = train_data
-        test_texts, test_labels = test_data
-        
-    return train_texts, test_texts, train_labels, test_labels
-
-def load_cleanemb(cache_dir= "data/malapi2019/emb-feature/LSTMTextClassifier/clean-exam/"):
-    file_names = ['train_embeddings.pkl', 'test_embeddings.pkl']
-    cache_files_exist = all(os.path.exists(os.path.join(cache_dir, file)) for file in file_names)
-    if cache_files_exist:
-        logger.debug("📦 malapi_cleanemd 已有缓存，正在加载缓存数据集...")        
-        train_data = io.read_pickle(os.path.join(cache_dir, file_names[0]))  # 读取训练集
-        test_data = io.read_pickle(os.path.join(cache_dir, file_names[1]))  # 读取测试集
-        train_texts, train_labels = train_data
-        test_texts, test_labels = test_data
-        
-    return train_texts, test_texts, train_labels, test_labels
+        return train_texts, test_texts, train_labels, test_labels
+    else:
+        raise FileNotFoundError(f"缓存文件不存在于目录：{cache_dir}")
