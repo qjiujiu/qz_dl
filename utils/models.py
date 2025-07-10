@@ -1,3 +1,8 @@
+import torch
+import torch.nn as nn
+import numpy as np
+
+from models.nlp.embed_mlp import MalMLP
 from models.nlp.conv_text import Conv1dTextClassifier
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 
@@ -7,10 +12,8 @@ from config.params_parser.params_template import (
     CvCfgParams
 )
 from utils import io
-import torch.nn as nn
 from gensim.models import KeyedVectors
-import torch
-import numpy as np
+
 
 def pick_model(cfg: CommonCfgParams, load_path: str = None):
     """ 根据 model_name 返回对应的模型实例
@@ -22,6 +25,7 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
             vocab_size=cfg.vocab_size,
             embedding_dim=cfg.embedding_dim,
             hidden_dim=cfg.hidden_dim,
+            bidirectional=True,
             output_dim=cfg.output_dim,
             layers=cfg.L 
         )
@@ -31,6 +35,11 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
             embedding_dim=cfg.embedding_dim,
             hidden_dim=cfg.hidden_dim,
             output_dim=cfg.output_dim
+        )
+    elif cfg.model == 'mlp':
+        model = MalMLP(
+            embedding_dim=cfg.embedding_dim,
+            hidden_dim=cfg.hidden_dim, num_classes=cfg.output_dim
         )
     
     if model is None:
