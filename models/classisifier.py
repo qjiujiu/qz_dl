@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.optim as optim
 
 import os
 import uuid, json
@@ -103,13 +104,17 @@ class ClassifierBaseModel(ABC, nn.Module):
         self.loss_fn = loss_fn
         return self
 
-    def setup_optimizer(self, optimizer):
+    def setup_optimizer(self, optimizer: optim.Optimizer):
         self.optimizer = optimizer
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer,       # 使用学习率衰减机制
+            mode='min',           # 当监控量使用 loss 则会设为 'min'
+            factor=0.5,           # 学习率减少的因子
+            patience=3,           # 多少个 epoch 没有改善后降低学习率
+            verbose=True          # 打印学习率更新信息
+        )
         return self
-
-    
-
-    
+ 
     # 绝大部分情况之下，eval_one_step/train_one_step 推理操作等同于forward 操作
     @abstractmethod 
     def eval_one_step(self, batch, **kwargs):
@@ -182,6 +187,9 @@ class ClassifierBaseModel(ABC, nn.Module):
             # 训练单个 epoch
             logger.info(f"Epoch [{epoch+1}/{epochs}]: ")
             avg_loss, metrics = self.train_one_epoch(loader, val_loader, **kwargs)
+
+            # 使用学习率衰减策略
+            self.scheduler.step(avg_loss)
             
             # 打印当前轮的训练结果
             logger.info(f"Loss: {avg_loss:.4f}. {metrics}")

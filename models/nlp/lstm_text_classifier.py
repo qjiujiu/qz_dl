@@ -91,3 +91,7 @@ class LSTMTextClassifier(ClassifierBaseModel):
         x, y = x.to(self.device), y.to(self.device)
         y_ = self.forward(self.embed(x))
         return y_
+    
+    def train_multiple_epochs_adv(self, loader, val_loader=None, epochs=10, attack=None):
+        pass
+        
