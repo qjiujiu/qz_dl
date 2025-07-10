@@ -7,11 +7,10 @@ from config.params_parser.params_template import (
     CvCfgParams
 )
 from utils import io
-from typing import Union
-from config.logger import logger
-import torch
 import torch.nn as nn
-
+from gensim.models import KeyedVectors
+import torch
+import numpy as np
 
 def pick_model(cfg: CommonCfgParams, load_path: str = None):
     """ 根据 model_name 返回对应的模型实例
@@ -43,7 +42,7 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
     return model
 
 
-def pick_embedding_encoder(cfg: NlpCfgParams, load_path: str = None):
+def pick_embedding_encoder(cfg: NlpCfgParams, load_path: str = None, vocab = None):
     """ 根据 encoder-name 返回对应的 embedding encoder 模型,
         需要注意，encoder 是不参与训练的，因此在返回之后必须冻结其参数
     """
@@ -60,7 +59,47 @@ def pick_embedding_encoder(cfg: NlpCfgParams, load_path: str = None):
 
         return encoder
     
-    if cfg.encoder == "id": 
+    if  cfg.encoder == "word2vec":
+        model = KeyedVectors.load(load_path, mmap='r')
+
+        def m(x):
+            if isinstance(x, torch.Tensor):
+                x = x.tolist()
+            index2word = {index: word for word, index in vocab.items()}
+            # 输入的是批量数据，每句话单独处理
+            embeddings = []
+            for seq in x:
+                words = [index2word.get(idx, '<UNK>') for idx in seq]
+                vectors = [model[word] if word in model else np.zeros(model.vector_size) for word in words]
+                embeddings.append(vectors)
+            return torch.tensor(np.array(embeddings), dtype=torch.float32) 
+        
+        encoder = m
+        return encoder
+    
+    if cfg.encoder == "fasttext":
+        model = KeyedVectors.load(load_path, mmap='r')
+        
+        def m(x):
+            if isinstance(x, torch.Tensor):
+                x = x.tolist()
+            index2word = {index: word for word, index in vocab.items()}
+            # 输入的是批量数据，每句话单独处理
+            embeddings = []
+            for seq in x:
+                words = [index2word.get(idx, '<UNK>') for idx in seq]
+                vectors = [model[word] if word in model else np.zeros(model.vector_size) for word in words]
+                embeddings.append(vectors)
+            return torch.tensor(np.array(embeddings), dtype=torch.float32) 
+        
+        encoder = m
+        return encoder
+
+
+    # 兜底策略
+    # 如果开启向量模式，但是没有指定任何外部 encoder，此时会用恒等映射模块来做 encoder，相当于跳过了原始模型的 embedding 模块
+    if cfg.only_embed:
         return nn.Identity()
     
+
     return encoder

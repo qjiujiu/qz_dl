@@ -2,11 +2,7 @@
 import torch.nn as nn
 from torch import Tensor
 from models.classisifier import ClassifierBaseModel
-
-from config.logger import logger
-
-
-
+from config.datasets.dataset_instance.mal_api import MalAPITextDataset
 
 class LSTMTextClassifier(ClassifierBaseModel):
     def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 0, **kwargs):
@@ -40,6 +36,11 @@ class LSTMTextClassifier(ClassifierBaseModel):
             - 输出: [batch_size, output_dim] logits
         """
         # 获取 LSTM 最后一层的隐状态（最后一个时间步的输出）
+        # embedded.shape: torch.Size([8, 200, 128])
+        # hidden.shape: torch.Size([1, 8, 256])
+        # hidden_out.shape: torch.Size([8, 256])
+        # dropped_out.shape: torch.Size([8, 256])
+        # output.shape: torch.Size([8, 8])
         lstm_out, (hidden, cell) = self.lstm(embedded)
         hidden_out = hidden[-1]
         dropped_out = self.dropout(hidden_out)

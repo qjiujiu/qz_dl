@@ -16,12 +16,13 @@ model = Word2Vec(min_count=1)
 model.build_vocab(sentences)  # prepare the model vocabulary
 model.train(sentences, total_examples=model.corpus_count, epochs=model.epochs)
 word_vectors = model.wv
-word_vectors.save("./word2vec.wordvectors")
+word_vectors.save("./checkpoints/malapiwv.wordvectors")
 
-# # 测试样例
-wv = KeyedVectors.load("./word2vec.wordvectors", mmap='r')
+# 测试样例
+wv = KeyedVectors.load("./checkpoints/malapiwv.wordvectors", mmap='r')
 print("Vocabulary size:", len(wv.index_to_key))
 vector = wv['ldrgetprocedureaddress']
 print(vector)
+print(vector.shape)
 
 

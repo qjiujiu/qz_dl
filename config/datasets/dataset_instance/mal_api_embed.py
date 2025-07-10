@@ -7,7 +7,6 @@ from config.logger import logger
 from utils.models import pick_model
 from config.params_parser.params_template import NlpCfgParams
 from config.datasets.datasrc.text_datasrc import TextDataSrc
-from utils import io
 
 def save_embeddings(embeddings, labels, save_dir, file_name):
     """保存嵌入表示"""
