@@ -36,6 +36,7 @@ class ClassifierBaseModel(ABC, nn.Module):
         self.loss_fn = None
         self.optimizer = None
         self.device = None
+        self.epoch = None
 
         # 初始化历史记录，并且记录训练配置
         self.history = {
@@ -104,17 +105,22 @@ class ClassifierBaseModel(ABC, nn.Module):
         self.loss_fn = loss_fn
         return self
 
-    def setup_optimizer(self, optimizer: optim.Optimizer):
+    def setup_optimizer(self, optimizer: optim.Optimizer, mode:str = 'min'):
         self.optimizer = optimizer
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer,       # 使用学习率衰减机制
-            mode='min',           # 当监控量使用 loss 则会设为 'min'
+            mode=mode,            # 当监控量使用 loss 则会设为 'min'
             factor=0.5,           # 学习率减少的因子
             patience=3,           # 多少个 epoch 没有改善后降低学习率
             verbose=True          # 打印学习率更新信息
         )
         return self
- 
+    
+    # 可安装需要重写这个方法
+    def scheduler_one_step(self, avg_loss, metrics: ClassificationResult, **kwargs):
+        self.scheduler.step(avg_loss)
+    
+
     # 绝大部分情况之下，eval_one_step/train_one_step 推理操作等同于forward 操作
     @abstractmethod 
     def eval_one_step(self, batch, **kwargs):
@@ -184,12 +190,13 @@ class ClassifierBaseModel(ABC, nn.Module):
         logger.debug(f"当前轮训练log-id: {self.log_id} 已开启...")
 
         for epoch in range(epochs):
-            # 训练单个 epoch
-            logger.info(f"Epoch [{epoch+1}/{epochs}]: ")
+            # 使用对象属性记录当前的 epoch, 然后训练单个 epoch
+            self.epoch = epoch + 1
+            logger.info(f"Epoch [{self.epoch}/{epochs}]: ")
             avg_loss, metrics = self.train_one_epoch(loader, val_loader, **kwargs)
 
             # 使用学习率衰减策略
-            self.scheduler.step(avg_loss)
+            self.scheduler_one_step(avg_loss, metrics)
             
             # 打印当前轮的训练结果
             logger.info(f"Loss: {avg_loss:.4f}. {metrics}")

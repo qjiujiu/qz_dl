@@ -1,6 +1,8 @@
+import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from ablation.focal_loss import FocalLoss
 from config.datasets.datasrc.text_datasrc import TextDataSrc
 from config.params_parser.parser import ArgsParser
 from config.logger import logger
@@ -38,6 +40,9 @@ logger.is_debug(True)
         训练: python train_lstm_emb.py -ec id --model lstm-adv -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb
         测试: python train_lstm_emb.py -ec id --model lstm-adv -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth -x 0
 
+        -chenzc
+            - L2  范数: 
+            - Linf 范数: 
 
     其它说明:  
         1. 若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数 
@@ -45,8 +50,6 @@ logger.is_debug(True)
         3. 若想直接使用向量，可添加 --encoder (缩写 -ec) 参数，encoder也可以使用先前模型预训练的 embedding 参数，这种情况必须
            传入预训练模型的权重路径
 """
-
-
 
 
 if __name__ == "__main__":
@@ -62,8 +65,13 @@ if __name__ == "__main__":
     logger.debug(f"使用的数据集{cfg.dataset}, 数据规模: {data_resource}")    
     
 
+    # 超参数 alpha 向量 （类别频率取倒数，然后归一化）
+    alpha = torch.tensor([
+        0.12, 0.10, 0.10, 0.10, 0.26, 0.11, 0.10, 0.10
+    ], dtype=torch.float32)
+    
     # 定义损失函数和优化器
-    criterion = nn.CrossEntropyLoss()
+    criterion = FocalLoss(label_smoothing=0.1)
     optimizer = optim.AdamW(model.parameters(), lr=cfg.lr)
     
     model.setup_ctx(cfg)\

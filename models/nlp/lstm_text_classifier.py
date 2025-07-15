@@ -74,20 +74,20 @@ class LSTMTextClassifier(ClassifierBaseModel):
         return fc_layers
         
 
-    def train_one_step(self, batch, encoder = None):
+    def train_one_step(self, batch, encoder = None, **kwargs):
         if encoder: 
             batch[0] = encoder(batch[0])
-            return super().train_one_step(batch)
+            return super().train_one_step(batch, **kwargs)
         
         x, y = batch
         x, y = x.to(self.device), y.to(self.device)
         y_ = self.forward(self.embed(x))
         return self.loss_fn(y_, y)
     
-    def eval_one_step(self, batch, encoder = None):
+    def eval_one_step(self, batch, encoder = None, **kwargs):
         if encoder:
             batch[0] = encoder(batch[0])
-            return super().eval_one_step(batch)
+            return super().eval_one_step(batch, **kwargs)
         
         x, y = batch
         x, y = x.to(self.device), y.to(self.device)
