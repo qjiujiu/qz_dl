@@ -15,16 +15,29 @@ logger.is_debug(True)
 
 """ 使用说明
     - 文本输入: 
-        训练: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv_type fgsm
-        测试: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth -x 0
+        默认嵌入+fgsm
+        训练: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type fgsm
+        测试: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi -cp checkpoints/2025-07-14/LSTMTextAdvClassifier/20250714-1834-d731b949_weights.pth -x 0
+        
+        默认嵌入+pgd
+        训练: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type pgd
+        测试: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi -cp checkpoints/2025-07-14/LSTMTextAdvClassifier/20250714-2004-5d4baa9e_weights.pth -x 0
 
+        word2vec嵌入+fgsm
+        训练：python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type fgsm -ec word2vec -lp ./checkpoints/malapiwv.wordvectors
+        测试：python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type fgsm -ec word2vec -lp ./checkpoints/malapiwv.wordvectors -cp checkpoints/2025-07-15/LSTMTextAdvClassifier/20250715-1527-e2532fc7_weights.pth -x 0
+
+        word2vec嵌入+pgd
+        训练：python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type pgd -ec word2vec -lp ./checkpoints/malapiwv.wordvectors
+
+        fasttext嵌入+fgsm
+
+        -ec fasttext -lp ./checkpoints/malapift.wordvectors
+    
     - Embedding 输入
         训练: python train_lstm_emb.py -ec id --model lstm-adv -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb
         测试: python train_lstm_emb.py -ec id --model lstm-adv -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth -x 0
 
-        -chenzc
-        - 文本输入： 
-           训练:
 
     其它说明:  
         1. 若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数 
@@ -59,7 +72,7 @@ if __name__ == "__main__":
 
     
     # 如果开启向量模式，会通过 encoder 来将索引转为向量，否则会使用模型自带的嵌入层
-    encoder = pick_embedding_encoder(cfg, cfg.load_path)
+    encoder = pick_embedding_encoder(cfg, cfg.load_path, vocab=data_resource.vocab)
     logger.debug(f"当前引用的外部的 encoder: {encoder}, 权重来自: {cfg.load_path}")
 
 
