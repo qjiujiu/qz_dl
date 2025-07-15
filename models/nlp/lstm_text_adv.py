@@ -166,11 +166,10 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
     
     def pgd_attack(self, embed, labels, epsilon = 0.1, alpha=0.01, iters = 5):
         with disable_dropout(self):
-            embed = embed.clone().detach().to(self.device).requires_grad_(True)
+            adv = embed.clone().detach().to(self.device).requires_grad_(True)
             labels = labels.to(self.device)  
-
+            
             self.train()
-
             for _ in range(iters):
                 self.zero_grad()
                 output = self.forward(adv)

@@ -19,7 +19,7 @@ class CommonCfgParams:
     load_path: Optional[str] = None        # encoder模型权重载入路径
     checkpoint_path: Optional[str] = None  # 模型保存路径
     seed: int = 3407                       # 随机数种子
-    
+
     # 预留的超参数，相当于提前占用了这些字母，这些参数可能用于任何地方
     alpha: float = 0.5
     beta: float = 0.5
@@ -59,11 +59,13 @@ class NlpCfgParams(CommonCfgParams):
     def __post_init__(self):
         pass
 
+@dataclass
 class AdvCfgParams(NlpCfgParams):
     fgsm_epsilon: Optional[int] = 0.1           # FGSM 扰动强度
     pgd_epsilon: Optional[int] = 0.1            # PGD 最大扰动范围
     pgd_alpha: Optional[int] = 0.01             # PGD 每步更新幅度
     pgd_iters: Optional[int] = 5                # PGD 迭代次数
+    adv_type: Optional[str] = "fgsm"            # 对抗攻击模式 
 
     def __post_init__(self):
         pass

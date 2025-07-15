@@ -15,13 +15,16 @@ logger.is_debug(True)
 
 """ 使用说明
     - 文本输入: 
-        训练: python train_lstm_emb.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi
-        测试: python train_lstm_emb.py --model lstm  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth -x 0
+        训练: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv_type fgsm
+        测试: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-1304-46c8ff3d_weights.pth -x 0
 
     - Embedding 输入
-        训练: python train_lstm_emb.py -ec id --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb
-        测试: python train_lstm_emb.py -ec id --model lstm -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth -x 0
+        训练: python train_lstm_emb.py -ec id --model lstm-adv -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb
+        测试: python train_lstm_emb.py -ec id --model lstm-adv -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth -x 0
 
+        -chenzc
+        - 文本输入： 
+           训练:
 
     其它说明:  
         1. 若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数 
@@ -34,7 +37,7 @@ logger.is_debug(True)
 
 
 if __name__ == "__main__":
-    cfg =  ArgsParser().create_nlp_config()
+    cfg =  ArgsParser().create_adv_config()
     model = pick_model(cfg, cfg.checkpoint_path)
     data_resource = TextDataSrc.load_dataset(
         dataset_name=cfg.dataset, 
@@ -66,7 +69,8 @@ if __name__ == "__main__":
             loader = data_resource.train_loader, 
             val_loader = data_resource.test_loader, 
             epochs = cfg.epochs, 
-            encoder = encoder
+            encoder = encoder,
+            adv_type = cfg.adv_type
         )
  
     # 测试模式

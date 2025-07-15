@@ -19,7 +19,6 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
     """ 根据 model_name 返回对应的模型实例
     """
     model = None
-
     if cfg.model == 'lstm':
         model = LSTMTextClassifier(
             vocab_size=cfg.vocab_size,

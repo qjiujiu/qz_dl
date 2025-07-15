@@ -67,7 +67,7 @@ class ArgsParser:
         parser.add_argument("--pgd_epsilon", type=float, default=0.1, help="PGD 最大扰动范围")
         parser.add_argument("--pgd_alpha", type=float, default=0.01, help="PGD 每步更新幅度")
         parser.add_argument("--pgd_iters", type=int, default=5, help="PGD 迭代次数")
-
+        parser.add_argument("--adv-type", type=str, default="fgsm", help="对抗攻击模式")
 
         # --- NLP 专用参数 ---
         parser.add_argument("--vocab-size", "-vs", type=int, help="词表大小")
@@ -93,12 +93,11 @@ class ArgsParser:
         if not is_dataclass(config_class):
             raise TypeError("config_class 必须是一个 dataclass")
 
-
+        
         valid_fields = set()
         for f in fields(config_class):
             if f.init:
                 valid_fields.add(f.name)
-
         filtered = {k: v for k, v in kwargs.items() if k in valid_fields}
         return config_class(**filtered)
 
