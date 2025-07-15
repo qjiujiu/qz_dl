@@ -116,10 +116,15 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
         x, y = x.to(self.device), y.to(self.device)
         adv_embed = self.embed(x)
 
-        if adv_type == "fgsm":
-            adv_embed = self.fgsm_attack(adv_embed, y)
-        elif adv_type == "pgd":
-            adv_embed = self.pgd_attack(adv_embed, y)
+        attacker = {
+            "fgsm": self.fgsm_attack, 
+            "pgd": self.pgd_attack, 
+            "l2-gaus": self.l2_gaussian_attack,
+            "linf-gaus": self.linf_gaussian_attack
+        }[adv_type]
+
+        adv_embed = attacker(adv_embed, y)
+
 
         y_ = self.forward(adv_embed)
         return self.loss_fn(y_, y)
@@ -131,17 +136,22 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
         
         x, y = batch
         x, y = x.to(self.device), y.to(self.device)
+        
         adv_embed = self.embed(x)
-        if adv_type == "fgsm":
-            adv_embed = self.fgsm_attack(adv_embed, y)
-        elif adv_type == "pgd":
-            adv_embed = self.pgd_attack(adv_embed, y)
+        attacker = {
+            "fgsm": self.fgsm_attack, 
+            "pgd": self.pgd_attack, 
+            "l2-gaus": self.l2_gaussian_attack,
+            "linf-gaus": self.linf_gaussian_attack
+        }[adv_type]
+
+        adv_embed = attacker(adv_embed, y)
         
         self.eval() # 完成对抗向量的构造之后再切回 eval 模式
         y_ = self.forward(adv_embed)
         return y_
-    
 
+   
     def evalution(self, dataloader, **kwargs):
         """评估模型并返回性能指标"""
         self.eval()
@@ -164,16 +174,14 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
         
         return ClassificationResult(accuracy=accuracy, precision=precision, recall=recall, f1=f1)
     
-    def pgd_attack(self, embed, labels, epsilon = 0.1, alpha=0.01, iters = 5):
+    def pgd_attack(self, embed, labels, epsilon = 0.1, alpha=0.01, iters = 3):
         with disable_dropout(self):
             adv = embed.clone().detach().to(self.device).requires_grad_(True)
             labels = labels.to(self.device)  
             
             self.train()
             for _ in range(iters):
-                self.zero_grad()
                 output = self.forward(adv)
-
                 loss = F.cross_entropy(output, labels)
                 loss.backward()
 
@@ -194,5 +202,40 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
             loss.backward()
     
             adv_emb = embed + epsilon * embed.grad.sign()  # 依据梯度更新对抗样本
+
+        return adv_emb.detach()
+
+    def l2_gaussian_attack(self, embed, labels, epsilon=0.1):
+        """  epsilon 范围之中添加高斯噪声，用于对比 FGSM 攻击
+        """
+        with disable_dropout(self):
+            embed = embed.clone().detach().to(self.device)
+            batch_size, seq_len, dim = embed.shape
+
+            # 生成标准正态分布的噪声
+            noise = torch.randn_like(embed)
+
+            # 计算每个样本的 L2 范数，并进行归一化
+            noise_norm = torch.norm(noise.view(batch_size, -1), dim=1, keepdim=True)  # shape: [batch, 1]
+            noise_unit = noise / noise_norm.view(batch_size, 1, 1)  # 归一化到单位向量
+
+            # 缩放到 epsilon 范围内
+            adv_emb = embed + epsilon * noise_unit
+
+        return adv_emb.detach()
+    
+    def linf_gaussian_attack(self, embed, labels, epsilon=0.1):
+        """  L-inf 范数约束之中添加 clip 处理高斯噪声，每个元素幅度不超过 [-eps, +eps]
+        """
+        with disable_dropout(self):
+            embed = embed.clone().detach().to(self.device)
+            
+            # 生成标准高斯噪声
+            noise = torch.randn_like(embed)
+
+            # Clip 每个元素使其不超过 ± epsilon
+            noise = torch.clamp(noise, min=-epsilon, max=epsilon)
+
+            adv_emb = embed + noise
 
         return adv_emb.detach()
