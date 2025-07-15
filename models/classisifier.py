@@ -36,6 +36,7 @@ class ClassifierBaseModel(ABC, nn.Module):
         self.loss_fn = None
         self.optimizer = None
         self.device = None
+        self.epoch = None
 
         # 初始化历史记录，并且记录训练配置
         self.history = {
@@ -184,8 +185,9 @@ class ClassifierBaseModel(ABC, nn.Module):
         logger.debug(f"当前轮训练log-id: {self.log_id} 已开启...")
 
         for epoch in range(epochs):
-            # 训练单个 epoch
-            logger.info(f"Epoch [{epoch+1}/{epochs}]: ")
+            # 使用对象属性记录当前的 epoch, 然后训练单个 epoch
+            self.epoch = epoch + 1
+            logger.info(f"Epoch [{self.epoch}/{epochs}]: ")
             avg_loss, metrics = self.train_one_epoch(loader, val_loader, **kwargs)
 
             # 使用学习率衰减策略
