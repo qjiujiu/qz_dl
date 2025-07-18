@@ -20,6 +20,8 @@ from sklearn.metrics import (
     f1_score
 )
 
+from torch.optim.lr_scheduler import LambdaLR
+
 # TODO 生成 log-id、缓存history 信息等功能要跟分类器解耦
 
 class ClassifierBaseModel(ABC, nn.Module):
@@ -105,21 +107,26 @@ class ClassifierBaseModel(ABC, nn.Module):
         self.loss_fn = loss_fn
         return self
 
-    def setup_optimizer(self, optimizer: optim.Optimizer, mode:str = 'min'):
+
+    def setup_optimizer(self, optimizer: optim.Optimizer, factor=0.5, **kwargs):
         self.optimizer = optimizer
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer,       # 使用学习率衰减机制
-            mode=mode,            # 当监控量使用 loss 则会设为 'min'
-            factor=0.5,           # 学习率减少的因子
-            patience=3,           # 多少个 epoch 没有改善后降低学习率
-            verbose=True          # 打印学习率更新信息
-        )
+
+        # 前20个epoch学习率保持不变，之后每隔5个epoch学习率减半
+        def lr_schedule(epoch):
+            if epoch < 20:
+                return 1.0
+            else:
+                return factor ** ((epoch - 16) // 5)
+
+        self.scheduler = LambdaLR(self.optimizer, lr_lambda=lr_schedule)
         return self
-    
-    # 可安装需要重写这个方法
-    def scheduler_one_step(self, avg_loss, metrics: ClassificationResult, **kwargs):
-        self.scheduler.step(avg_loss)
-    
+
+
+    def scheduler_one_step(self, *args, **kwargs):
+        self.scheduler.step()
+        for param_group in self.optimizer.param_groups:
+            logger.info(f"当前学习率: {param_group['lr']:.6f}")
+
 
     # 绝大部分情况之下，eval_one_step/train_one_step 推理操作等同于forward 操作
     @abstractmethod 
@@ -196,7 +203,7 @@ class ClassifierBaseModel(ABC, nn.Module):
             avg_loss, metrics = self.train_one_epoch(loader, val_loader, **kwargs)
 
             # 使用学习率衰减策略
-            self.scheduler_one_step(avg_loss, metrics)
+            self.scheduler_one_step()
             
             # 打印当前轮的训练结果
             logger.info(f"Loss: {avg_loss:.4f}. {metrics}")
