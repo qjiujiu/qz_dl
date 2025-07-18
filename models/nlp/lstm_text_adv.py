@@ -107,7 +107,7 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
         return fc_layers
         
 
-    def train_one_step(self, batch, encoder = None, adv_type="fgsm"):
+    def train_one_step(self, batch, encoder = None, adv_type="fgsm", pgd_iters = 3):
         if encoder: 
             batch[0] = encoder(batch[0])
             return super().train_one_step(batch)
@@ -122,14 +122,14 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
             "l2-gaus": self.l2_gaussian_attack,
             "linf-gaus": self.linf_gaussian_attack
         }[adv_type]
-
-        adv_embed = attacker(adv_embed, y)
+        
+        adv_embed = attacker(adv_embed, y, iters = pgd_iters)
 
 
         y_ = self.forward(adv_embed)
         return self.loss_fn(y_, y)
     
-    def eval_one_step(self, batch, encoder = None, adv_type="fgsm"):
+    def eval_one_step(self, batch, encoder = None, adv_type="fgsm", pgd_iters = 3):
         if encoder:
             batch[0] = encoder(batch[0])
             return super().eval_one_step(batch)
@@ -144,8 +144,8 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
             "l2-gaus": self.l2_gaussian_attack,
             "linf-gaus": self.linf_gaussian_attack
         }[adv_type]
-
-        adv_embed = attacker(adv_embed, y)
+        
+        adv_embed = attacker(adv_embed, y, iters = pgd_iters)
         
         self.eval() # 完成对抗向量的构造之后再切回 eval 模式
         y_ = self.forward(adv_embed)
@@ -191,7 +191,7 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
 
         return adv.detach()
     
-    def fgsm_attack(self, embed, labels, epsilon = 0.1):
+    def fgsm_attack(self, embed, labels, epsilon = 0.1, iters=3):
         with disable_dropout(self):
             embed = embed.clone().detach().to(self.device).requires_grad_(True)
             labels = labels.to(self.device)
@@ -205,7 +205,7 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
 
         return adv_emb.detach()
 
-    def l2_gaussian_attack(self, embed, labels, epsilon=0.1):
+    def l2_gaussian_attack(self, embed, labels, epsilon=0.1, iters=3):
         """  epsilon 范围之中添加高斯噪声，用于对比 FGSM 攻击
         """
         with disable_dropout(self):
@@ -224,7 +224,7 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
 
         return adv_emb.detach()
     
-    def linf_gaussian_attack(self, embed, labels, epsilon=0.1):
+    def linf_gaussian_attack(self, embed, labels, epsilon=0.1, iters=3):
         """  L-inf 范数约束之中添加 clip 处理高斯噪声，每个元素幅度不超过 [-eps, +eps]
         """
         with disable_dropout(self):

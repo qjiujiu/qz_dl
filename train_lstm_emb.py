@@ -22,9 +22,15 @@ logger.is_debug(True)
         测试: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi -cp checkpoints/2025-07-14/LSTMTextAdvClassifier/20250714-1834-d731b949_weights.pth -x 0
         
         默认嵌入+pgd
-        训练: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type pgd
+        训练: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type pgd --pgd-iters 2
         测试: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi -cp checkpoints/2025-07-14/LSTMTextAdvClassifier/20250714-2004-5d4baa9e_weights.pth -x 0
 
+        默认嵌入+L2高斯噪声
+        训练: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type l2-gaus
+        
+        默认嵌入+L-inf高斯噪声
+        训练: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type linf-gaus
+        
         word2vec嵌入+fgsm
         训练：python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type fgsm -ec word2vec -lp ./checkpoints/malapiwv.wordvectors
         测试：python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type fgsm -ec word2vec -lp ./checkpoints/malapiwv.wordvectors -cp checkpoints/2025-07-15/LSTMTextAdvClassifier/20250715-1527-e2532fc7_weights.pth -x 0
@@ -91,7 +97,8 @@ if __name__ == "__main__":
             val_loader = data_resource.test_loader, 
             epochs = cfg.epochs, 
             encoder = encoder,
-            adv_type = cfg.adv_type
+            adv_type = cfg.adv_type,
+            pgd_iters = cfg.pgd_iters
         )
  
     # 测试模式

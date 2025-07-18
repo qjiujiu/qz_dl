@@ -2,7 +2,10 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from models.nlp.conv_text import Conv1dTextClassifier
+from models.nlp.conv_text import (
+    Conv1dTextClassifier,
+    Conv2dTextClassifier
+)
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from models.nlp.lstm_text_adv import LSTMTextAdvClassifier
 
@@ -13,7 +16,10 @@ from config.params_parser.params_template import (
 )
 from utils import io
 from gensim.models import KeyedVectors
-
+from models.nlp.conv_text_adv import (
+    Conv1dTextAdvClassifier,
+    Conv2dTextAdvClassifier
+)
 
 def pick_model(cfg: CommonCfgParams, load_path: str = None):
     """ 根据 model_name 返回对应的模型实例
@@ -39,6 +45,28 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
         )
     elif cfg.model == 'conv1d':
         model = Conv1dTextClassifier(
+            vocab_size=cfg.vocab_size,
+            embedding_dim=cfg.embedding_dim,
+            hidden_dim=cfg.hidden_dim,
+            output_dim=cfg.output_dim
+        )
+    elif cfg.model == 'conv2d':
+        model = Conv2dTextClassifier(
+            vocab_size=cfg.vocab_size,
+            embedding_dim=cfg.embedding_dim,
+            hidden_dim=cfg.hidden_dim,
+            output_dim=cfg.output_dim,
+            max_len=cfg.max_len
+        )
+    elif cfg.model == 'conv1d-adv':
+        model = Conv1dTextAdvClassifier(
+            vocab_size=cfg.vocab_size,
+            embedding_dim=cfg.embedding_dim,
+            hidden_dim=cfg.hidden_dim,
+            output_dim=cfg.output_dim
+        )
+    elif cfg.model == 'conv2d-adv':
+        model = Conv2dTextAdvClassifier(
             vocab_size=cfg.vocab_size,
             embedding_dim=cfg.embedding_dim,
             hidden_dim=cfg.hidden_dim,

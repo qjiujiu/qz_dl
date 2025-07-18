@@ -63,10 +63,10 @@ class ArgsParser:
         parser.add_argument("--x", "-x", type=int, default=1, help="预留超参数")
         
         # 添加对抗攻击相关的超参数
-        parser.add_argument("--fgsm_epsilon", type=float, default=0.1, help="FGSM 扰动强度")
-        parser.add_argument("--pgd_epsilon", type=float, default=0.1, help="PGD 最大扰动范围")
-        parser.add_argument("--pgd_alpha", type=float, default=0.01, help="PGD 每步更新幅度")
-        parser.add_argument("--pgd_iters", type=int, default=5, help="PGD 迭代次数")
+        parser.add_argument("--fgsm-epsilon", type=float, default=0.1, help="FGSM 扰动强度")
+        parser.add_argument("--pgd-epsilon", type=float, default=0.1, help="PGD 最大扰动范围")
+        parser.add_argument("--pgd-alpha", type=float, default=0.01, help="PGD 每步更新幅度")
+        parser.add_argument("--pgd-iters", type=int, default=5, help="PGD 迭代次数")
         parser.add_argument("--adv-type", type=str, default="fgsm", help="对抗攻击模式")
 
         # --- NLP 专用参数 ---
