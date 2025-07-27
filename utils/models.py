@@ -8,6 +8,8 @@ from models.nlp.conv_text import (
 )
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from models.nlp.lstm_text_adv import LSTMTextAdvClassifier
+from models.nlp.tcn import TCNTextClassifier
+
 
 from config.params_parser.params_template import (
     CommonCfgParams, 
@@ -27,49 +29,39 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
     model = None
     if cfg.model == 'lstm':
         model = LSTMTextClassifier(
-            vocab_size=cfg.vocab_size,
-            embedding_dim=cfg.embedding_dim,
-            hidden_dim=cfg.hidden_dim,
-            bidirectional=True,
-            output_dim=cfg.output_dim,
-            layers=cfg.L 
+            vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
+            bidirectional=True, output_dim=cfg.output_dim, layers=cfg.L, 
+            atten_key=cfg.atten
         )
     elif cfg.model == 'lstm-adv':
         model = LSTMTextAdvClassifier(
-            vocab_size=cfg.vocab_size,
-            embedding_dim=cfg.embedding_dim,
-            hidden_dim=cfg.hidden_dim,
-            bidirectional=True,
-            output_dim=cfg.output_dim,
-            layers=cfg.L 
+            vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
+            bidirectional=True, output_dim=cfg.output_dim, layers=cfg.L,
+            atten_key=cfg.atten
         )
     elif cfg.model == 'conv1d':
         model = Conv1dTextClassifier(
-            vocab_size=cfg.vocab_size,
-            embedding_dim=cfg.embedding_dim,
-            hidden_dim=cfg.hidden_dim,
+            vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
             output_dim=cfg.output_dim
         )
     elif cfg.model == 'conv2d':
         model = Conv2dTextClassifier(
-            vocab_size=cfg.vocab_size,
-            embedding_dim=cfg.embedding_dim,
-            hidden_dim=cfg.hidden_dim,
-            output_dim=cfg.output_dim,
-            max_len=cfg.max_len
+            vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
+            output_dim=cfg.output_dim, max_len=cfg.max_len
         )
     elif cfg.model == 'conv1d-adv':
         model = Conv1dTextAdvClassifier(
-            vocab_size=cfg.vocab_size,
-            embedding_dim=cfg.embedding_dim,
-            hidden_dim=cfg.hidden_dim,
+            vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
             output_dim=cfg.output_dim
         )
     elif cfg.model == 'conv2d-adv':
         model = Conv2dTextAdvClassifier(
-            vocab_size=cfg.vocab_size,
-            embedding_dim=cfg.embedding_dim,
-            hidden_dim=cfg.hidden_dim,
+            vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
+            output_dim=cfg.output_dim
+        )
+    elif cfg.model == 'tcn':
+        model = TCNTextClassifier(
+            vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, tcn_channels=[128, 128, 128], 
             output_dim=cfg.output_dim
         )
     

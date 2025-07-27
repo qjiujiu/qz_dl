@@ -57,6 +57,8 @@ logger.is_debug(True)
            传入预训练模型的权重路径
 """
 
+# python train_lstm_emb.py --model lstm-attn  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi
+# python train_lstm_emb.py --model lstm-attn-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type pgd
 
 if __name__ == "__main__":
     cfg =  ArgsParser().create_adv_config()

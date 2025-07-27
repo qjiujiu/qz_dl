@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from models.classisifier import ClassifierBaseModel
+from models.nlp.atten import attention_block
 
 from config.metrics.metrics_res_template import ClassificationResult
-from config.datasets.dataset_instance.mal_api import MalAPITextDataset
 from config.logger import logger
 
 from contextlib import contextmanager
@@ -32,7 +32,10 @@ def disable_dropout(model):
 
 
 class LSTMTextAdvClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 0, **kwargs):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, 
+            bidirectional: bool = False, layers: int = 0, atten_key: str = None,
+            **kwargs
+        ):
         """ 初始化 LSTM 文本分类模型
         参数：
             - vocab_size: 词汇表大小
@@ -44,10 +47,8 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
         """
         super(LSTMTextAdvClassifier, self).__init__()
         
-        self.embedding = nn.Embedding(vocab_size, embedding_dim)
-        
-        # 引入layernorm与否并没有造成什么性能影响
-        # self.embed_ln = nn.LayerNorm(embedding_dim)
+        self.embedding = nn.Embedding(vocab_size, embedding_dim) 
+        self.atten = attention_block(embed_dim=embedding_dim, atten_key=atten_key)
 
         self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True, bidirectional = bidirectional)
         self.dropout = nn.Dropout(0.5)
@@ -59,7 +60,7 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
             - 输出：[batch_size, max_len, embedding_dim] 的嵌入表示
         """
         z = self.embedding(x)
-        # z = self.embed_ln(z)
+        z = self.atten(z)
         return z
 
     def forward(self, embedded):
@@ -239,3 +240,4 @@ class LSTMTextAdvClassifier(ClassifierBaseModel):
             adv_emb = embed + noise
 
         return adv_emb.detach()
+    

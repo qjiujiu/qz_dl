@@ -2,10 +2,18 @@
 import torch.nn as nn
 from torch import Tensor
 from models.classisifier import ClassifierBaseModel
-from config.datasets.dataset_instance.mal_api import MalAPITextDataset
+from models.nlp.atten import attention_block
+from config.logger import logger
+from typing import Literal, Optional
+
+logger.is_debug(True)
+
 
 class LSTMTextClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, bidirectional = False, layers = 0, **kwargs):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, 
+            bidirectional: bool = False, layers: int = 0, atten_key: str = None,
+            **kwargs
+        ):
         """ 初始化 LSTM 文本分类模型
         参数：
             - vocab_size: 词汇表大小
@@ -18,6 +26,9 @@ class LSTMTextClassifier(ClassifierBaseModel):
         super(LSTMTextClassifier, self).__init__()
         
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.atten = attention_block(embed_dim=embedding_dim, atten_key=atten_key)
+
+
         self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True, bidirectional = bidirectional)
         self.dropout = nn.Dropout(0.3)
         self.fc = self._build_fc(hidden_dim, output_dim, layers=layers)
@@ -27,7 +38,9 @@ class LSTMTextClassifier(ClassifierBaseModel):
             - 输入：[batch_size, max_len] 的 token 索引张量
             - 输出：[batch_size, max_len, embedding_dim] 的嵌入表示
         """
-        return self.embedding(x)
+        x = self.embedding(x)
+        x = self.atten(x)
+        return x
 
     def forward(self, embedded):
         """ 从嵌入开始的前向传播（跳过嵌入层）
@@ -96,3 +109,7 @@ class LSTMTextClassifier(ClassifierBaseModel):
 
     def evalution(self, dataloader, **kwargs):
         return super().evalution(dataloader, **kwargs) 
+
+
+
+

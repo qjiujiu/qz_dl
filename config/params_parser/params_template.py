@@ -52,9 +52,11 @@ class NlpCfgParams(CommonCfgParams):
     hidden_dim: Optional[int] = None             # 隐藏层维度
     output_dim: Optional[int] = None             # 输出类别数
     max_len: Optional[int] = None                # 最大序列长度
+    
   
     only_embed: bool = False                     # 直接传入 embedding 向量进行训练，而不传入文件索引
     encoder: str = None                          # 使用何种编码器来将文本输入转为 embedding 向量输入
+    atten: Optional[str] = None                  # 使用何种注意力机制模块
     
     def __post_init__(self):
         pass

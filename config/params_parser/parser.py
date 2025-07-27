@@ -77,6 +77,7 @@ class ArgsParser:
         parser.add_argument("--max-len",  type=int, help="最大序列长度")
         parser.add_argument("--only-embed", action="store_true", help="是否直接传入 embedding 向量进行训练")
         parser.add_argument("--encoder", "-ec", type=str, default=None, help="使用何种编码器来将文本转为 embedding")
+        parser.add_argument("--atten", type=str, default=None, help="注意力机制模块")
 
 
         # --- 其它场景的参数 ---
