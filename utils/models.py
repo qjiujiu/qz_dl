@@ -42,22 +42,22 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
     elif cfg.model == 'conv1d':
         model = Conv1dTextClassifier(
             vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
-            output_dim=cfg.output_dim
+            output_dim=cfg.output_dim, atten_key=cfg.atten
         )
     elif cfg.model == 'conv2d':
         model = Conv2dTextClassifier(
             vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
-            output_dim=cfg.output_dim, max_len=cfg.max_len
+            output_dim=cfg.output_dim, max_len=cfg.max_len, atten_key=cfg.atten
         )
     elif cfg.model == 'conv1d-adv':
         model = Conv1dTextAdvClassifier(
             vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
-            output_dim=cfg.output_dim
+            output_dim=cfg.output_dim, atten_key=cfg.atten
         )
     elif cfg.model == 'conv2d-adv':
         model = Conv2dTextAdvClassifier(
             vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, hidden_dim=cfg.hidden_dim,
-            output_dim=cfg.output_dim
+            output_dim=cfg.output_dim, atten_key=cfg.atten
         )
     elif cfg.model == 'tcn':
         model = TCNTextClassifier(
