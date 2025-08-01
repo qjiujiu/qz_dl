@@ -7,7 +7,7 @@ from models.classisifier import ClassifierBaseModel
 from config.metrics.metrics_res_template import ClassificationResult
 from config.datasets.dataset_instance.mal_api import MalAPITextDataset
 from config.logger import logger
-
+from models.nlp.atten import attention_block
 from contextlib import contextmanager
 from torch import Tensor
 from tqdm import tqdm
@@ -29,10 +29,10 @@ def disable_dropout(model):
         model.dropout.p = original_p 
 
 class Conv2dTextAdvClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, **kwargs):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, atten_key: str = None, **kwargs):
         super(Conv2dTextAdvClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
-
+        self.atten = attention_block(embed_dim=embedding_dim, atten_key=atten_key)
         # 确保嵌入矩阵可以reshape为正方形图像
         assert embedding_dim == image_size * image_size, "Embedding dimension must match the square of image size"
         image_size =  int(embedding_dim ** 0.5)
@@ -56,7 +56,9 @@ class Conv2dTextAdvClassifier(ClassifierBaseModel):
 
     def embed(self, x: torch.Tensor) -> torch.Tensor:
         """ 嵌入层前向传播 """
-        return self.embedding(x)  # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.embedding(x)  # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.atten(z)
+        return z
 
     def forward(self, embedded: torch.Tensor) -> torch.Tensor:
         """
@@ -219,9 +221,11 @@ class Conv2dTextAdvClassifier(ClassifierBaseModel):
 
 
 class Conv1dTextAdvClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, **kwargs):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, atten_key: str = None, **kwargs):
         super(Conv1dTextAdvClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.atten = attention_block(embed_dim=embedding_dim, atten_key=atten_key)
+
         # 一维卷积层
         self.conv = nn.Sequential(
             nn.Conv1d(in_channels=embedding_dim, out_channels=hidden_dim, kernel_size=3, padding=1),
@@ -247,7 +251,9 @@ class Conv1dTextAdvClassifier(ClassifierBaseModel):
 
     def embed(self, x: torch.Tensor) -> torch.Tensor:
         """ 嵌入层前向传播 """
-        return self.embedding(x)  # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.embedding(x)  # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.atten(z)
+        return z
 
     def forward(self, embedded: torch.Tensor) -> torch.Tensor:
         """
