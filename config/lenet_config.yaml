@@ -1,5 +1,0 @@
-batch_size: 4096
-epochs: 10
-learning_rate: 0.001
-checkpoint_path: "checkpoints/lenet_best.pth"
-log_level: "INFO"
