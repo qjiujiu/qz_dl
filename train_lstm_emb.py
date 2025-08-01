@@ -37,18 +37,34 @@ logger.is_debug(True)
 
         word2vec嵌入+pgd
         训练：python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type pgd -ec word2vec -lp ./checkpoints/malapiwv.wordvectors
-
-        fasttext嵌入+fgsm
-
-        -ec fasttext -lp ./checkpoints/malapift.wordvectors
     
+        默认嵌入+atten:mlp
+            fgsm：        python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten mlp --adv-type fgsm
+            pgd(iter=1):  python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten mlp --adv-type pgd --pgd-iters 1 (pgd的迭代次数需测试1-5次)
+            L2高斯噪声:    python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten mlp --adv-type l2-gaus
+            L-inf高斯噪声: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten mlp --adv-type linf-gaus
+
+        默认嵌入+atten:self
+            fgsm：        python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self --adv-type fgsm
+            pgd(iter=1):  python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self --adv-type pgd --pgd-iters 1 (pgd的迭代次数需测试1-5次)
+            L2高斯噪声:    python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self --adv-type l2-gaus
+            L-inf高斯噪声: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self --adv-type linf-gaus
+        
+        默认嵌入+atten：pe
+            fgsm：        python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten pe --adv-type fgsm
+            pgd(iter=1):  python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten pe --adv-type pgd --pgd-iters 1 (pgd的迭代次数需测试1-5次)
+            L2高斯噪声:    python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten pe --adv-type l2-gaus
+            L-inf高斯噪声: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten pe --adv-type linf-gaus
+        
+        默认嵌入+atten：self-pe
+            fgsm：        python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self-pe --adv-type fgsm
+            pgd(iter=1):  python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self-pe --adv-type pgd --pgd-iters 1 (pgd的迭代次数需测试1-5次)
+            L2高斯噪声:    python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self-pe --adv-type l2-gaus
+            L-inf高斯噪声: python train_lstm_emb.py --model lstm-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self-pe --adv-type linf-gaus
+        
     - Embedding 输入
         训练: python train_lstm_emb.py -ec id --model lstm-adv -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb
         测试: python train_lstm_emb.py -ec id --model lstm-adv -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi_fgsmemb -cp checkpoints/2025-07-09/LSTMTextClassifier/20250709-0954-ff28631f_weights.pth -x 0
-
-        -chenzc
-            - L2  范数: 
-            - Linf 范数: 
 
     其它说明:  
         1. 若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数 
@@ -57,8 +73,8 @@ logger.is_debug(True)
            传入预训练模型的权重路径
 """
 
-# python train_lstm_emb.py --model lstm-attn  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi
-# python train_lstm_emb.py --model lstm-attn-adv  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --adv-type pgd
+
+# 
 
 if __name__ == "__main__":
     cfg =  ArgsParser().create_adv_config()
