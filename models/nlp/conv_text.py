@@ -2,12 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.classisifier import ClassifierBaseModel
+from models.nlp.atten import attention_block
 
 class Conv2dTextClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, max_len, **kwargs):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, max_len, atten_key: str = None, **kwargs):
         super(Conv2dTextClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
-
+        self.atten = attention_block(embed_dim=embedding_dim, atten_key=atten_key)
         # 二维卷积层
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=hidden_dim, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(in_channels=hidden_dim, out_channels=hidden_dim, kernel_size=3, padding=1)
@@ -33,7 +34,9 @@ class Conv2dTextClassifier(ClassifierBaseModel):
 
     def embed(self, x: torch.Tensor) -> torch.Tensor:
         """ 嵌入层前向传播 """
-        return self.embedding(x)  # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.embedding(x) # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.atten(z)
+        return z 
 
     def forward(self, embedded: torch.Tensor) -> torch.Tensor:
         """
@@ -97,9 +100,10 @@ class Conv2dTextClassifier(ClassifierBaseModel):
 
 
 class Conv1dTextClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, **kwargs):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, atten_key: str = None, **kwargs):
         super(Conv1dTextClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.atten = attention_block(embed_dim=embedding_dim, atten_key=atten_key)
         # 一维卷积层
         self.conv = nn.Sequential(
             nn.Conv1d(in_channels=embedding_dim, out_channels=hidden_dim, kernel_size=3, padding=1),
@@ -125,7 +129,9 @@ class Conv1dTextClassifier(ClassifierBaseModel):
 
     def embed(self, x: torch.Tensor) -> torch.Tensor:
         """ 嵌入层前向传播 """
-        return self.embedding(x)  # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.embedding(x) # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.atten(z)
+        return z  
 
     def forward(self, embedded: torch.Tensor) -> torch.Tensor:
         """
