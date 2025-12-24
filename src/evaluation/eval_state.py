@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, Dict
 import numpy as np
 
 
@@ -133,6 +133,22 @@ class EvalState(BaseModel):
             return 0.0
         return float(np.mean([self._state_from_stats(k, stats).f1 for k in range(n)]))
 
-    # ===== 每个类别的 State =====
+    # 每个类别的 State (one-vs-rest)
     def state_one_vs_rest(self, k: int) -> State:
         return self._state_from_stats(k, self._cm_stats)
+    
+    # NOTE 因为每个类别 one-vs-rest 的 TN 数量非常大，并且不平衡, 因此macro accuracy 常常不被推荐使用
+    def to_dict(self) -> Dict:
+        return {
+            "acc": self.micro_state.accuracy,
+            "micro":{    
+                "p": self.micro_precision,
+                "r": self.micro_recall,
+                "f1": self.micro_f1_score,
+            }, 
+            "macro":{
+                "p": self.macro_precision,
+                "r": self.macro_recall,
+                "f1": self.macro_f1_score
+            }
+        }

@@ -4,6 +4,14 @@ import pytest
 from src.evaluation.state import State
 from src.evaluation.eval_state import EvalState 
 
+# 模拟一个简单的 EvalState
+@pytest.fixture
+def eval_state() -> EvalState:
+    labels = np.array([0, 1, 0, 1, 0])  # 真实标签
+    predicts = np.array([0, 1, 1, 1, 0])  # 预测结果
+    return EvalState(labels=labels, predicts=predicts, total_classes=2)
+
+
 
 class TestEvalState:
     """EvalState 单元测试"""
@@ -175,3 +183,46 @@ class TestEvalState:
 
         with pytest.raises(ValueError):
             _ = es.y_pred
+
+
+    def test_to_dict_accuracy(self, eval_state: EvalState):
+        """测试micro accuracy 是否正确返回"""
+        result = eval_state.to_dict()
+        
+        # 正确预测的样本数 / 总样本数
+        assert result["acc"] == pytest.approx(4 / 5)  
+
+    def test_to_dict_micro_precision(self, eval_state: EvalState):
+        """ 测试micro precision 是否正确返回
+            NOTE 打印出 TP=4 FP=1 TN=4 FN=1，加起来等于 10，样本只有五个，这看起来很反直觉，但在宏平均逻辑之下是正确的, 
+            NOTE 这是必然且正确的，宏平均的逻辑是把每一个类别都当成一次独立的“二分类任务”，然后把所有任务的 TP/FP/TN/FN 加起来, 因此 Micro 指标的统计基数本来就是 样本数 × 类别数，而不是样本数。
+        """
+        print(eval_state)
+        print(eval_state.micro_state)
+        
+        result = eval_state.to_dict()
+        assert result["micro"]["p"] == pytest.approx(4 / 5)  # precision = TP / (TP + FP)
+
+    def test_to_dict_micro_recall(self, eval_state: EvalState):
+        """测试micro recall 是否正确返回"""
+        result = eval_state.to_dict()
+        assert "micro" in result
+        assert "r" in result["micro"]
+        assert result["micro"]["r"] == pytest.approx(4 / 5)  # recall = TP / (TP + FN)
+
+
+    def test_to_dict_macro_precision(self, eval_state: EvalState):
+        """测试macro precision 是否正确返回"""
+        result = eval_state.to_dict()
+        assert "macro" in result
+        assert "p" in result["macro"]
+        assert result["macro"]["p"] == pytest.approx(5 / 6)
+
+    # 宏平均就是把各类的指标算术平均
+    def test_to_dict_macro_recall(self, eval_state: EvalState):
+        """测试macro recall 是否正确返回"""
+        result = eval_state.to_dict()
+        assert "macro" in result
+        assert "r" in result["macro"]
+        assert result["macro"]["r"] == pytest.approx(5 / 6)
+        
