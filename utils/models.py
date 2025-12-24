@@ -9,7 +9,7 @@ from models.nlp.conv_text import (
 from models.nlp.lstm_text_classifier import LSTMTextClassifier
 from models.nlp.lstm_text_adv import LSTMTextAdvClassifier
 from models.nlp.tcn import TCNTextClassifier
-
+from models.nlp.tcn_adv import TCNTextAdvClassifier
 
 from config.params_parser.params_template import (
     CommonCfgParams, 
@@ -62,9 +62,13 @@ def pick_model(cfg: CommonCfgParams, load_path: str = None):
     elif cfg.model == 'tcn':
         model = TCNTextClassifier(
             vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, tcn_channels=[128, 128, 128], 
-            output_dim=cfg.output_dim
+            output_dim=cfg.output_dim, dropout=cfg.dropout_prob, atten_key=cfg.atten
         )
-    
+    elif cfg.model == 'tcn-adv':
+        model = TCNTextAdvClassifier(
+            vocab_size=cfg.vocab_size, embedding_dim=cfg.embedding_dim, tcn_channels=[128, 128, 128], 
+            output_dim=cfg.output_dim, dropout=cfg.dropout_prob, atten_key=cfg.atten
+        )
     
     if model is None:
         raise ValueError(f"Unknown model name: {cfg.model}")

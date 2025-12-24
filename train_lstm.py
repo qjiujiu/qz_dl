@@ -75,6 +75,15 @@ logger.is_debug(True)
         fasttext嵌入：
             python train_lstm.py --model tcn  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 -ec fasttext -lp ./checkpoints/malapift.wordvectors
       
+       默认嵌入 + atten:mlp：
+            python train_lstm.py --model tcn  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten mlp
+        默认嵌入 + atten:self：
+            python train_lstm.py --model tcn  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self
+        默认嵌入 + atten:pe：
+            python train_lstm.py --model tcn  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten pe
+        默认嵌入 + atten:self-pe：
+            python train_lstm.py --model tcn  -bs 8 -ep 30 --lr 0.001 -eb 128 --hidden-dim 256 --output-dim 8  --max-len 200  --vocab-size 278 --dataset malapi --atten self-pe
+
     其它说明: 
         1. 若想载入权重，可添加 --checkpoint-path (缩写 -cp) 参数 
         2. 若想跳过文本格式数据直接传输向量，可添加 --encoder (缩写 -ec) 参数，encoder也可以使用先前模型预训练的 embedding 参数，这种情况必须

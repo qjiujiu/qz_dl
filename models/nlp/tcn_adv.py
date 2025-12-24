@@ -1,15 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from models.classisifier import ClassifierBaseModel
 from config.metrics.metrics_res_template import ClassificationResult
 from config.logger import logger
 from contextlib import contextmanager
 from tqdm import tqdm
+from models.nlp.atten import attention_block
 
 from sklearn.metrics import (
     accuracy_score, 
@@ -81,10 +78,10 @@ class TCN(nn.Module):
 
 
 class TCNTextAdvClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, tcn_channels, output_dim, dropout=0.3):
+    def __init__(self, vocab_size, embedding_dim, tcn_channels, output_dim, dropout=0.3, atten_key: str = None,):
         super(TCNTextAdvClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
-
+        self.atten = attention_block(embed_dim=embedding_dim, atten_key=atten_key)
         self.tcn = TCN(num_inputs=embedding_dim,
                        num_channels=tcn_channels,
                        kernel_size=3,
@@ -93,9 +90,14 @@ class TCNTextAdvClassifier(ClassifierBaseModel):
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(tcn_channels[-1], output_dim)
 
+    def embed(self, x: torch.Tensor) -> torch.Tensor:
+        """ 嵌入层前向传播 """
+        z = self.embedding(x) # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.atten(z)
+        return z  
+
     def forward(self, x):
-        embedded = self.embedding(x)          # [batch, seq_len, embedding_dim]
-        embedded = embedded.permute(0, 2, 1)  # [batch, embedding_dim, seq_len] for Conv1d
+        embedded = x.permute(0, 2, 1)  # [batch, embedding_dim, seq_len] for Conv1d
 
         tcn_out = self.tcn(embedded)  # [batch, channels, seq_len]
         tcn_last = tcn_out[:, :, -1]  # 取最后一个时间步的表示 [batch, channels]

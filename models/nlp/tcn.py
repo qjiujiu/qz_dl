@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from models.nlp.atten import attention_block
 from models.classisifier import ClassifierBaseModel
 
 class TemporalBlock(nn.Module):
@@ -58,10 +58,10 @@ class TCN(nn.Module):
 
 
 class TCNTextClassifier(ClassifierBaseModel):
-    def __init__(self, vocab_size, embedding_dim, tcn_channels, output_dim, dropout=0.3):
+    def __init__(self, vocab_size, embedding_dim, tcn_channels, output_dim, dropout=0.3, atten_key: str = None,):
         super(TCNTextClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
-
+        self.atten = attention_block(embed_dim=embedding_dim, atten_key=atten_key)
         self.tcn = TCN(num_inputs=embedding_dim,
                        num_channels=tcn_channels,
                        kernel_size=3,
@@ -69,10 +69,15 @@ class TCNTextClassifier(ClassifierBaseModel):
 
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(tcn_channels[-1], output_dim)
-
+    
+    def embed(self, x: torch.Tensor) -> torch.Tensor:
+        """ 嵌入层前向传播 """
+        z = self.embedding(x) # [B, MAX_LEN, EMBEDDING_DIM]
+        z = self.atten(z)
+        return z  
+    
     def forward(self, x):
-        embedded = self.embedding(x)          # [batch, seq_len, embedding_dim]
-        embedded = embedded.permute(0, 2, 1)  # [batch, embedding_dim, seq_len] for Conv1d
+        embedded = x.permute(0, 2, 1)  # [batch, embedding_dim, seq_len] for Conv1d
 
         tcn_out = self.tcn(embedded)  # [batch, channels, seq_len]
         tcn_last = tcn_out[:, :, -1]  # 取最后一个时间步的表示 [batch, channels]
@@ -80,8 +85,25 @@ class TCNTextClassifier(ClassifierBaseModel):
         out = self.dropout(tcn_last)
         return self.fc(out)
 
-    def train_one_step(self, batch, **kwargs):
-        return super().train_one_step(batch, **kwargs)
+    def train_one_step(self, batch, encoder = None, **kwargs):
+        if encoder: 
+            batch[0] = encoder(batch[0])
+            return super().train_one_step(batch, **kwargs)
+        
+        x, y = batch
+        x, y = x.to(self.device), y.to(self.device)
+        y_ = self.forward(self.embed(x))
+        return self.loss_fn(y_, y)
+
+    def eval_one_step(self, batch, encoder = None, **kwargs):
+        if encoder:
+            batch[0] = encoder(batch[0])
+            return super().eval_one_step(batch, **kwargs)
+        
+        x, y = batch
+        x, y = x.to(self.device), y.to(self.device)
+        y_ = self.forward(self.embed(x))
+        return y_
     
-    def eval_one_step(self, batch, **kwargs):
-        return super().eval_one_step(batch, **kwargs)
+    def evalution(self, dataloader, **kwargs):
+        return super().evalution(dataloader, **kwargs) 
