@@ -3,22 +3,18 @@ from enum import Enum
 class TaskType(str, Enum):
     NLP = "nlp"
     VISION = "vision"
-    
+
 
 class OptimizerType(str, Enum):
     ADAM  = "adam"
     ADAMW = "adamw"
     SGD   = "sgd"
 
-
-class AttenType(str, Enum):
-    MLP = "mlp"
-    SELF = "self"
-    PE = "pe"
-    SELF_PE = "self-pe"
-    
+class SchedulerType(str, Enum):
+    COSINE = "cosine"
+    LINEAR = "linear" 
 
 
-class AttackType(str, Enum):
-    FGSM = "fgsm"
-    PGD  = "pgd"
+class LossType(str, Enum):
+    CROSS_ENTROPY = "ce"
+    FOCAL_LOSS = "focal"

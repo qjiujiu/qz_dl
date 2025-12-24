@@ -113,9 +113,9 @@ def _enable_color_formatting(logger: logging.Logger):
 
 # 默认导出的实例，复用 root logger 或指定名称
 # 使用 logging 这个名字, 以便到时候直接替换默认的日志库
-logx = get_extended_logger()
+logger = logx = get_extended_logger()
 
-__all__ = ["logx", "logging", "get_extended_logger"]
+__all__ = ["logx", "logger", "logging", "get_extended_logger"]
 
 
 if __name__ == '__main__':

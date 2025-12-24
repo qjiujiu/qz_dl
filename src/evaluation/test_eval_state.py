@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from src.eval.state import State
-from src.eval.eval_state import EvalState 
+from src.evaluation.state import State
+from src.evaluation.eval_state import EvalState 
 
 
 class TestEvalState:

@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 
 
-from src.eval.state import State
+from src.evaluation.state import State
 
 
 class EvalState(BaseModel):

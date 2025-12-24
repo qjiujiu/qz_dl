@@ -1,8 +1,10 @@
 from __future__ import annotations
-from src.pipelines.enums import OptimizerType, TaskType, AttenType,  AttackType
+from src.schemas.base_enums import OptimizerType, SchedulerType, LossType, TaskType
+from src.schemas.block_enums import AttackType, AttenType
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Optional
 from pathlib import Path
+import uuid
 import torch
 
 
@@ -40,6 +42,8 @@ class ModelConfig(BaseModel):
     # 统一使用 Path 类型，方便后续直接 .exists() 检查
     pretrained_dir: Optional[Path] = None 
     checkpoint_dir: Optional[Path] = Field(default=Path("./checkpoints"), description="模型保存目录")
+    ouputs_log_dir: Optional[Path] = Field(default=Path("./outputs/log"), description="模型训练中间日志目录")
+    ouputs_trace_dir: Optional[Path] = Field(default=Path("./outputs/trace"), description="模型训练记录目录")
     
 
 class DataConfig(BaseModel):
@@ -50,7 +54,7 @@ class DataConfig(BaseModel):
     num_workers: int = Field(4, ge=0)
     pin_memory: bool = True
 
-    # 使用 Optional 配合默认 None，比 default_factory更安全
+    # 使用 Optional 配合默认 None，这样比起 default_factory 更安全
     nlp_config: Optional[NLPConfig] = None
     vision_config: Optional[VisionConfig] = None
 
@@ -70,9 +74,12 @@ class TrainConfig(BaseModel):
     epochs: int = Field(50, ge=1)
     lr: float = Field(1e-3, gt=0)
     weight_decay: float = Field(1e-4, ge=0, description="L2 正则化系数")
+    momentum: float = Field(0.9, ge=0, le=1, description="动量因子，仅对 SGD 有效")
     
-    optimizer: OptimizerType = OptimizerType.ADAMW
-    scheduler: Optional[str] = Field("cosine", description="学习率调度器")
+    optiz: OptimizerType = OptimizerType.ADAMW
+    sched: Optional[str] = Field("cosine", description="学习率调度器")
+    loss_fn: Optional[str] =   Field("cross_entropy", description="损失函数类型")
+    
     
     seed: int = 3407
     device: str = Field("auto", description="cuda:0, cpu, mps, auto")
@@ -89,13 +96,19 @@ class TrainConfig(BaseModel):
 
 # 总入口
 class ExpContext(BaseModel):
-    task_id: str = Field(..., description="实验唯一ID")
-    description: str = Field(..., description="实验描述/备注")
-    
     model_config: ModelConfig
     data_config: DataConfig
     train_config: TrainConfig
     adv_config: AdvConfig = Field(default_factory=AdvConfig)
 
+    # 实验元信息
+    description: Optional[str] = Field(
+        default="未填写任何描述", 
+        description="实验描述/备注")
+    
+    task_id: Optional[str] = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="实验唯一ID, 无需用户填写, 自动生成")
+    
     # 允许通过 yaml 读取时忽略未知字段（为了兼容性）
     model_config = ConfigDict(extra='ignore')
