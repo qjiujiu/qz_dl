@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler 
 
+
+
 def build_loss_fn(cfg: TrainConfig) -> nn.Module:
     """
     构建损失函数
@@ -17,8 +19,8 @@ def build_loss_fn(cfg: TrainConfig) -> nn.Module:
     creator_fn = creators.get(cfg.loss_fn)
     
     if creator_fn is None:
-        creator_fn = creators.get(LossType.CROSS_ENTROPY)
         logger.warning("Loss not define, falling back to CrossEntropy")
+        creator_fn = creators.get(LossType.CROSS_ENTROPY)
         
     return creator_fn()
 
@@ -39,8 +41,8 @@ def build_optimizer(cfg: TrainConfig, model: nn.Module) -> optim.Optimizer:
     
     # 兜底逻辑
     if creator_fn is None:
-        creator_fn = creators.get(OptimizerType.ADAM)
         logger.warning(f"Unknown optimizer '{cfg.optiz}', defaulting to Adam.")
+        creator_fn = creators.get(OptimizerType.ADAM)
         
     return creator_fn()
 
@@ -61,7 +63,7 @@ def build_scheduler(cfg: TrainConfig, optimizer: optim.Optimizer) -> lr_schedule
     creator_fn = creators.get(cfg.sched)
     
     if creator_fn is None:
-        creator_fn = creators.get(SchedulerType.LINEAR)
         logger.warning(f"Unknown scheduler '{cfg.sched}', defaulting to Linear.")
+        creator_fn = creators.get(SchedulerType.LINEAR)
 
     return creator_fn()

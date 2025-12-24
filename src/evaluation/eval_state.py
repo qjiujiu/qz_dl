@@ -138,7 +138,7 @@ class EvalState(BaseModel):
         return self._state_from_stats(k, self._cm_stats)
     
     # NOTE 因为每个类别 one-vs-rest 的 TN 数量非常大，并且不平衡, 因此macro accuracy 常常不被推荐使用
-    def to_dict(self) -> Dict:
+    def calculate(self) -> Dict:
         return {
             "acc": self.micro_state.accuracy,
             "micro":{    

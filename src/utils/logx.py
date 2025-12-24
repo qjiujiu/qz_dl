@@ -84,8 +84,8 @@ def _enable_color_formatting(logger: logging.Logger):
         datefmt=date_format,
         log_colors={
             'DEBUG': '',
-            'HIGHLIGHT': 'cyan',
-            'INFO': 'white',
+            'HIGHLIGHT': 'white',
+            'INFO': 'cyan',
             'SUCCESS': 'green',
             'WARNING': 'yellow',
             'ERROR': 'red',

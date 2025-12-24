@@ -2,7 +2,7 @@
 from src.schemas.base_enums import TaskType, OptimizerType, SchedulerType, LossType
 from src.schemas.block_enums import AttenType, AttackType
 from src.schemas.context import (
-    ExpContext, ModelConfig, DataConfig, TrainConfig,
+    ExpContext, NetworkConfig, DataConfig, TrainConfig,
     NLPConfig, VisionConfig, AdvConfig,
 )
 
@@ -15,7 +15,7 @@ import torch
 
 @pytest.fixture
 def base_model_config():
-    return ModelConfig(
+    return NetworkConfig(
         name="lenet",
         dropout_prob=0.3,
     )
@@ -115,10 +115,10 @@ class TestModelConfig:
     def test_model_name_required(self):
         """name 必填，缺失应报错"""
         with pytest.raises(ValidationError):
-            ModelConfig(dropout_prob=0.3)
+            NetworkConfig(dropout_prob=0.3)
 
     def test_checkpoint_dir_default(self):
-        mc = ModelConfig(name="lenet", dropout_prob=0.3)
+        mc = NetworkConfig(name="lenet", dropout_prob=0.3)
         assert mc.checkpoint_dir == Path("./checkpoints")
 
 
@@ -127,7 +127,7 @@ class TestExpContext:
     def test_exp_context_defaults(self, base_model_config, base_nlp_data_config, base_train_config):
         """ExpContext 默认字段正确"""
         ctx = ExpContext(
-            model_config=base_model_config,
+            network_config=base_model_config,
             data_config=base_nlp_data_config,
             train_config=base_train_config,
         )
@@ -147,7 +147,7 @@ class TestExpContext:
     def test_exp_context_with_custom_description(self, base_model_config, base_nlp_data_config, base_train_config):
         """自定义 description"""
         ctx = ExpContext(
-            model_config=base_model_config,
+            network_config=base_model_config,
             data_config=base_nlp_data_config,
             train_config=base_train_config,
             description="这是一个测试实验",
@@ -157,7 +157,7 @@ class TestExpContext:
     def test_exp_context_with_vision_task(self, base_model_config, base_vision_data_config, base_train_config):
         """VISION 任务的 ExpContext 正常构造"""
         ctx = ExpContext(
-            model_config=base_model_config,
+            network_config=base_model_config,
             data_config=base_vision_data_config,
             train_config=base_train_config,
         )

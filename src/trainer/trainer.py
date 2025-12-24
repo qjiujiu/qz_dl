@@ -1,24 +1,21 @@
-import torch
-import torch.nn as nn
-import os
-import json
-import uuid
-import numpy as np
-from datetime import datetime
-from torch.optim.lr_scheduler import LambdaLR, CosineAnnealingLR
-from tqdm import tqdm
-
 from src.utils.logx import logger
-from src.utils.dumps import to_jsonable, ensure_dirs
+from src.utils.dumps import dump_to_json, ensure_dirs
 from src.schemas.context import ExpContext
 from src.evaluation import EvalState
 from src.trainer.build_helper import build_optimizer, build_scheduler, build_loss_fn
 
+import torch
+import torch.nn as nn
+import numpy as np
+from datetime import datetime
+from tqdm import tqdm
+
 
 class Trainer:
     def __init__(self, context: ExpContext, model: nn.Module, train_loader, val_loader=None):
-        self.ctx = context
-        self.model = model
+        self.ctx: ExpContext = context
+        self.model: nn.Module = model
+        
         self.train_loader = train_loader
         self.val_loader = val_loader
         
@@ -40,9 +37,9 @@ class Trainer:
         
         # 确保目录存在
         ensure_dirs(
-            self.ctx.model_config.checkpoint_dir, 
-            self.ctx.model_config.ouputs_trace_dir,
-            self.ctx.model_config.logs_dir
+            self.ctx.network_config.checkpoint_dir, 
+            self.ctx.network_config.ouputs_trace_dir,
+            self.ctx.network_config.ouputs_log_dir,
         )
         
         
@@ -72,24 +69,18 @@ class Trainer:
                     pbar.set_postfix(loss=loss.item())
             
             avg_loss = total_loss / len(self.train_loader)
-            self.history['train_loss'].append(avg_loss)
+            val_metrics = self.evaluate()
             
-            # === Validation Loop ===
-            val_metrics = {}
-            if self.val_loader:
-                val_metrics = self.evaluate()
-                self.history['val_metrics'].append(val_metrics)
-                metrics_str = ", ".join([f"{k}: {v:.4f}" for k, v in val_metrics.items()])
-                logger.info(f"Epoch {epoch} Val: {metrics_str}")
+            self.history['train_loss'].append(avg_loss)
+            self.history['val_metrics'].append(val_metrics)
 
-            # === Scheduler Step ===
+            logger.info(f"Epoch {epoch}, {str(val_metrics)}, avg_loss: {avg_loss:.4f}")
+
             if self.scheduler:
                 self.scheduler.step()
                 
-            # === Save Checkpoint ===
-            self._save_checkpoint(epoch, val_metrics)
-
-        self._save_final_log()
+        self._save_checkpoint(suffix=f"epoch-{epochs}")
+        self._save_trace()
 
     @torch.no_grad()
     def evaluate(self) -> dict:
@@ -107,28 +98,23 @@ class Trainer:
             predicts=np.concatenate(all_preds)
         )
         
-        return {
-            "acc": state.accuracy, 
-            "f1_macro": state.macro_f1_score,
-            "precision_macro": state.macro_precision
-        }
+        return state.calculate()
 
-    def _save_checkpoint(self, epoch: int, metrics: dict):
-        name = self.ctx.model_config.name
-        ckpt_dir = self.ctx.model_config.checkpoint_dir
+    def _save_checkpoint(self, suffix: str):
+        name = self.ctx.network_config.name
+        ckpt_dir = self.ctx.network_config.checkpoint_dir
         
-        save_path = ckpt_dir / f"{name}_epoch_{epoch}.pth"
+        save_path = ckpt_dir / f"{name}-{suffix}.pth"
         torch.save(self.model.state_dict(), save_path)
-        logger.debug(f"Saved checkpoint to {save_path}")
+        logger.info(f"Saved checkpoint to {save_path}")
 
-    def _save_final_log(self):
-        trace = to_jsonable({
+    def _save_trace(self):
+        trace = {
             "task_id": self.task_id,
             "timestamp": datetime.now().isoformat(),
             "config": self.ctx.model_dump(mode='json'),
             "history": self.history
-        })
+        }
         
-        log_path = self.ctx.model_config.ouputs_trace_dir / f"{self.task_id}.json"
-        with open(log_path, "w", encoding="utf-8") as f:
-            json.dump(trace, f, indent=4, ensure_ascii=False)
+        trace_path = self.ctx.network_config.ouputs_trace_dir / f"{self.task_id}.json"
+        dump_to_json(trace, trace_path)

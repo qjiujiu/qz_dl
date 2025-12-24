@@ -14,7 +14,7 @@ class NLPConfig(BaseModel):
     vocab_size: Optional[int]     = Field(278, description="词汇表大小")
     embedding_dim: Optional[int]  = Field(128, description="文本嵌入维度")
     max_len: Optional[int]        = Field(200, description="截断长度")
-    atten: AttenType = AttenType.SELF
+    atten: AttenType              = Field(AttenType.SELF, description="注意力机制类型")
 
 
 class VisionConfig(BaseModel):
@@ -32,10 +32,7 @@ class AdvConfig(BaseModel):
 
 
 
-class ModelConfig(BaseModel):
-    # 允许额外的字段，代替 explicit extra dict
-    model_config = ConfigDict(extra='allow') 
-    
+class NetworkConfig(BaseModel):
     name: str = Field(..., description="模型架构名称")
     dropout_prob: float = Field(0.5, ge=0, le=1)
     
@@ -44,6 +41,9 @@ class ModelConfig(BaseModel):
     checkpoint_dir: Optional[Path] = Field(default=Path("./checkpoints"), description="模型保存目录")
     ouputs_log_dir: Optional[Path] = Field(default=Path("./outputs/log"), description="模型训练中间日志目录")
     ouputs_trace_dir: Optional[Path] = Field(default=Path("./outputs/trace"), description="模型训练记录目录")
+    
+    # 允许额外的字段，代替 explicit extra dict
+    model_config = ConfigDict(extra='allow') 
     
 
 class DataConfig(BaseModel):
@@ -96,7 +96,7 @@ class TrainConfig(BaseModel):
 
 # 总入口
 class ExpContext(BaseModel):
-    model_config: ModelConfig
+    network_config: NetworkConfig
     data_config: DataConfig
     train_config: TrainConfig
     adv_config: AdvConfig = Field(default_factory=AdvConfig)
