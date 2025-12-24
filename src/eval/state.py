@@ -22,8 +22,8 @@ class State(BaseModel):
         return float(self.TP / (self.TP + self.FN + self._eps))
 
     @property
-    def f1_score(self) -> float:
-        p, r = self.precision, self.recall
+    def f1(self) -> float:
+        p, r =self.precision, self.recall
         return float(2 * p * r / (p + r + self._eps))
 
     @property

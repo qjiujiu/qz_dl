@@ -1,10 +1,10 @@
-from src.eval.state import State
-
 from __future__ import annotations
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 import numpy as np
 
+
+from src.eval.state import State
 
 
 class EvalState(BaseModel):
@@ -103,7 +103,7 @@ class EvalState(BaseModel):
 
     @property
     def micro_f1_score(self) -> float:
-        return self.micro_state.f1_score
+        return self.micro_state.f1
     
     # ===== Macro Average (宏平均) =====
     # 宏平均是先计算每个类别的指标，然后求算术平均
@@ -131,7 +131,7 @@ class EvalState(BaseModel):
         n = self.num_labels
         if n == 0: 
             return 0.0
-        return float(np.mean([self._state_from_stats(k, stats).f1_score for k in range(n)]))
+        return float(np.mean([self._state_from_stats(k, stats).f1 for k in range(n)]))
 
     # ===== 每个类别的 State =====
     def state_one_vs_rest(self, k: int) -> State:
