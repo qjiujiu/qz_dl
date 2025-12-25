@@ -3,13 +3,13 @@ import torch.nn as nn
 from typing import Optional
 
 
-class LSTMTextClassifier(nn.Module):  
+class LSTMSeqClassifier(nn.Module):  
     def __init__(self, 
             vocab_size: int, 
             embedding_dim: int, 
             hidden_dim: int, 
             output_dim: int, 
-            bidirectional: bool = False, 
+            bidirectional: bool = True, 
             layers: int = 1,
             dropout: float = 0.3,
         ):

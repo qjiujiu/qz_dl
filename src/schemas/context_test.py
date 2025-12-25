@@ -1,6 +1,6 @@
 
 from src.schemas.base_enums import TaskType, OptimizerType, SchedulerType, LossType
-from src.schemas.block_enums import AttenType, AttackType
+from src.schemas.block_enums import PluginType, AttackType
 from src.schemas.context import (
     ExpContext, NetworkConfig, DataConfig, TrainConfig,
     NLPConfig, VisionConfig, AdvConfig,

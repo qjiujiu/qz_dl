@@ -1,6 +1,6 @@
 from __future__ import annotations
 from src.schemas.base_enums import OptimizerType, SchedulerType, LossType, TaskType
-from src.schemas.block_enums import AttackType, AttenType
+from src.schemas.block_enums import AttackType, PluginType
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Optional
 from pathlib import Path
@@ -14,7 +14,7 @@ class NLPConfig(BaseModel):
     vocab_size: Optional[int]     = Field(278, description="词汇表大小")
     embedding_dim: Optional[int]  = Field(128, description="文本嵌入维度")
     max_len: Optional[int]        = Field(200, description="截断长度")
-    atten: AttenType              = Field(AttenType.SELF, description="注意力机制类型")
+    atten: PluginType              = Field(PluginType.SA, description="注意力机制类型")
 
 
 class VisionConfig(BaseModel):

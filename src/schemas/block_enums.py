@@ -1,10 +1,10 @@
 from enum import Enum
 
-class AttenType(str, Enum):
-    MLP = "mlp"
-    PE = "pe"
-    SELF = "self"
-    SELF_PE = "self-pe"
+class PluginType(str, Enum):
+    MlpAtten = "mlp"
+    PosEnc = "pe"
+    SA = "self"
+    SelfPE = "self-pe"
     
 
 class AttackType(str, Enum):
