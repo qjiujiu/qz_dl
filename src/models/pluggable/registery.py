@@ -17,7 +17,7 @@ def register_pluggable_module(atten_type: PluginType):
     return decorator
 
 
-def build_pluggable_block(block_key: PluginType, embed_dim: int):
+def build_pluggable_block(block_key: PluginType, embed_dim: int) -> nn.Module:
     """ 根据 atten_key 获取对应的注意力模块, 只有导入的时候会注册装饰器进行注册, 
         因此 from ... import ... 不可删除, 其作用是确保相关模块已被导入, 若删除, 会进入恒等映射兜底!
     """

@@ -1,3 +1,4 @@
+from src.schemas.block_enums import PluginType
 from src.models.lstm_classifer import LSTMSeqClassifier
 from torch.utils.data import DataLoader, TensorDataset
 import torch
@@ -38,7 +39,35 @@ def model():
 
 
 class TestLSTMSeqClassifier:
-    
+    def test_plugin_integration(self):
+        """测试即插即用模块的集成是否正确"""
+        model = LSTMSeqClassifier(
+            vocab_size=100,
+            embedding_dim=64,
+            hidden_dim=128,
+            output_dim=2,
+            bidirectional=True,
+            layers=2,
+            dropout=0.3,
+            plugin_type=None  # 不使用插件
+        )
+        
+        assert isinstance(model.plugin, torch.nn.Identity)
+        
+        
+        for plugin in [PluginType.MlpAtten, PluginType.PosEnc, PluginType.SA, PluginType.SelfPE]:
+            model = LSTMSeqClassifier(
+                vocab_size=100,
+                embedding_dim=64,
+                hidden_dim=128,
+                output_dim=2,
+                bidirectional=True,
+                layers=2,
+                dropout=0.3,
+                plugin_type=plugin
+            )
+            assert not isinstance(model.plugin, torch.nn.Identity) 
+        
     def test_forward_pass(self, model, dummy_data, num_classes):
         """测试前向传播，确保输出形状正确"""
         # 获取批次数据

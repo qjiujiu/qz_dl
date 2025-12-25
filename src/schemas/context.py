@@ -34,7 +34,8 @@ class AdvConfig(BaseModel):
 
 class NetworkConfig(BaseModel):
     name: str = Field(..., description="模型架构名称")
-    dropout_prob: float = Field(0.5, ge=0, le=1)
+    dropout_prob: Optional[float] = Field(0.5, ge=0, le=1)
+    plugin_type: Optional[str] = Field(default=None, description="可插拔模块名称, e.g. mlp/self/pe/self-pe")
     
     # 统一使用 Path 类型，方便后续直接 .exists() 检查
     pretrained_dir: Optional[Path] = None 
@@ -42,7 +43,7 @@ class NetworkConfig(BaseModel):
     ouputs_log_dir: Optional[Path] = Field(default=Path("./outputs/log"), description="模型训练中间日志目录")
     ouputs_trace_dir: Optional[Path] = Field(default=Path("./outputs/trace"), description="模型训练记录目录")
     
-    # 允许额外的字段，代替 explicit extra dict
+    # 允许额外的字段，代替 explicit extra dict, 此处的 model_config 实为 Pydantic 2.0 固有字段, 而非深度学习模型 (BaseModel 通常是指数据模型)
     model_config = ConfigDict(extra='allow') 
     
 
