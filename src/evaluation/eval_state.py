@@ -1,6 +1,6 @@
 from __future__ import annotations
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, Dict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
+from typing import Optional, List, Dict
 import numpy as np
 
 
@@ -13,13 +13,17 @@ class EvalState(BaseModel):
         - shape=[N,C]：one-hot/prob/logits
     """
     
-    # 允许 numpy 类型的字段
+    # 允许 numpy 类型的字段 (ndarray 无法直接序列化, 需要先转List才行)
     model_config = ConfigDict(arbitrary_types_allowed=True)
    
     labels: np.ndarray
     predicts: np.ndarray
     total_classes: Optional[int] = Field(default=None, description="可选：类别数，若不提供则自动推断")
 
+    @field_serializer('labels', 'predicts')
+    def serialize_ndarray(self, v: np.ndarray) -> List:
+        return v.tolist() 
+    
     # ===== 内部工具：统一转为类别 ID =====
     @staticmethod
     def _to_ids(x: np.ndarray) -> np.ndarray:
@@ -47,6 +51,7 @@ class EvalState(BaseModel):
         # 基于最大 ID 推断
         return int(max(self.y_true.max(initial=-1), self.y_pred.max(initial=-1)) + 1)
 
+    
     @property
     def confusion_matrix(self) -> np.ndarray:
         """ 计算混淆矩阵，行是 True，列是 Pred """

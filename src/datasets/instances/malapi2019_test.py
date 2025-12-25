@@ -122,8 +122,9 @@ def test_end_to_end_data_loading(mock_data_config):
 
 def test_build_datamodule(mock_exp_context):
     """端到端测试：build_datamodule → DataLoader → batch shape"""
-    train_loader, val_loader, vocab_size = build_datamodule(mock_exp_context)
+    train_loader, val_loader, vocab = build_datamodule(mock_exp_context)
 
+    vocab_size = len(vocab)
     # 检查 vocab_size 合理, 至少包含 <pad>, <unk> + 一些词
     assert vocab_size > 2 
 

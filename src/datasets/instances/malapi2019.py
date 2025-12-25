@@ -62,21 +62,21 @@ def _load_raw_text_data(data_dir: Path = "data/malapi2019", test_size: float = 0
     return train_test_split(texts, labels, test_size=test_size, random_state=42)
 
 
-def _load_data(cfg: DataConfig):
+def _load_data(cfg: DataConfig) -> Tuple[MalAPITextDataset, MalAPITextDataset, Dict]:
     """根据配置加载 MalAPI 数据集"""
     data_dir = Path(cfg.data_dir)
-    cache_dir = data_dir / "preprocessed"
+    cache_dir = data_dir / "preprocessed" 
     cache_dir.mkdir(parents=True, exist_ok=True) 
     
     # 尝试读取缓存
     if (cache_dir / "train.pkl").exists() and (cache_dir / "vocab.pkl").exists():
-        logger.debug("Loading text dataset from cache...")
+        logger.debug(f"Cache Hit! Loading text dataset from cache_dir: {cache_dir}")
         with open(cache_dir / "train.pkl", "rb") as f: train_data = pickle.load(f)
         with open(cache_dir / "test.pkl", "rb") as f:  test_data = pickle.load(f)
         with open(cache_dir / "vocab.pkl", "rb") as f: vocab = pickle.load(f)
         
     else:
-        logger.debug("Processing raw text data...")
+        logger.debug("Cache miss. Processing raw text data...")
         X_train, X_test, y_train, y_test = _load_raw_text_data(data_dir)
         
         # 获取最小词频配置, 倘若没有设置默认设为 1
@@ -93,7 +93,8 @@ def _load_data(cfg: DataConfig):
         with open(cache_dir / "train.pkl", "wb") as f: pickle.dump(train_data, f)
         with open(cache_dir / "test.pkl", "wb") as f: pickle.dump(test_data, f)
         with open(cache_dir / "vocab.pkl", "wb") as f: pickle.dump(vocab, f)
-
+        logger.debug("Cache saved successfully.")
+        
     # 实例化 Dataset, 校验 max_len
     if not cfg.nlp_config or not cfg.nlp_config.max_len:
          raise ValueError("Config Error: 'nlp_config.max_len' is required for text datasets.")
@@ -107,7 +108,7 @@ def _load_data(cfg: DataConfig):
 
 
 
-def build_datamodule(ctx: ExpContext) -> Tuple[DataLoader, DataLoader, int]:
+def build_datamodule(ctx: ExpContext) -> Tuple[DataLoader, DataLoader, Dict]:
     """ 外部调用的唯一入口: 直接调用模块函数加载
         返回训练数据加载器、验证数据的加载器、词表大小
     """
@@ -123,4 +124,4 @@ def build_datamodule(ctx: ExpContext) -> Tuple[DataLoader, DataLoader, int]:
     train_loader = DataLoader(train_ds, batch_size=ctx.train_config.batch_size, shuffle=True)
     val_loader = DataLoader(test_ds, batch_size=ctx.train_config.batch_size)
     
-    return train_loader, val_loader, vocab_size
+    return train_loader, val_loader, vocab
