@@ -26,6 +26,7 @@ class TestAttentionModules:
         output = attention(random_noise_data)
         
         # 输出形状应与输入形状一致：[batch_size, seq_len, embed_dim]
+        print(attention)
         print(output.shape)
         assert output.shape == random_noise_data.shape, f"Expected shape {random_noise_data.shape}, but got {output.shape}"
     
@@ -35,6 +36,7 @@ class TestAttentionModules:
         output = attention(random_noise_data)
         
         # 输出形状应与输入形状一致：[batch_size, seq_len, embed_dim]
+        print(attention)
         print(output.shape)
         assert output.shape == random_noise_data.shape, f"Expected shape {random_noise_data.shape}, but got {output.shape}"
     
@@ -44,6 +46,7 @@ class TestAttentionModules:
         output = attention(random_noise_data)
         
         # 输出形状应与输入形状一致：[batch_size, seq_len, embed_dim]
+        print(attention)
         print(output.shape)
         assert output.shape == random_noise_data.shape, f"Expected shape {random_noise_data.shape}, but got {output.shape}"
     
@@ -53,5 +56,6 @@ class TestAttentionModules:
         output = attention(random_noise_data)
         
         # 输出形状应与输入形状一致：[batch_size, seq_len, embed_dim]
+        print(attention)
         print(output.shape)
         assert output.shape == random_noise_data.shape, f"Expected shape {random_noise_data.shape}, but got {output.shape}"
