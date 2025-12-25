@@ -3,7 +3,7 @@
 /data
 /logs
 /res
-
+/outputs
 /EMBER2024
 
 # 基本 Python 必备忽略文件

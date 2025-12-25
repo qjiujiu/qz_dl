@@ -15,7 +15,6 @@ class TextSeqClassifier(nn.Module):
             output_dim: int, 
             dropout: float = 0.5,
             plugin_type: Optional[PluginType] = None,
-            **kwargs
         ):
         super().__init__()
         

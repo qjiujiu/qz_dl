@@ -11,9 +11,9 @@ import torch
 
 # 基础组件配置
 class NLPConfig(BaseModel):
-    vocab_size: Optional[int]     = Field(278, description="词汇表大小")
+    vocab_size: Optional[int]     = Field(278, ge=2, description="词表大小, 仅限文本/离散符号序列任务")
+    embedding_dim: Optional[int]  = Field(256, ge=0, description="嵌入层向量维度")
     min_freq: Optional[int]       = Field(1,   description="最小词频")
-    embedding_dim: Optional[int]  = Field(128, description="文本嵌入维度")
     max_len: Optional[int]        = Field(200, description="截断长度")
     atten: Optional[PluginType]   = Field(PluginType.SA, description="注意力机制类型")
 
@@ -36,11 +36,12 @@ class AdvConfig(BaseModel):
 class NetworkConfig(BaseModel):
     name: str = Field(..., description="模型架构名称")
     dropout_prob: Optional[float] = Field(0.5, ge=0, le=1)
+    num_classes: Optional[int]    = Field(2, ge=1, description="类别数量, 仅限分类任务")
     plugin_type: Optional[str]    = Field(default=None, description="可插拔模块名称, e.g. mlp/self/pe/self-pe")
     
     # 统一使用 Path 类型，方便后续直接 .exists() 检查
     pretrained_dir: Optional[Path] = None 
-    checkpoint_dir: Optional[Path] = Field(default=Path("./checkpoints"), description="模型保存目录")
+    checkpoint_dir: Optional[Path] = Field(default=Path("./outputs/checkpoints"), description="模型保存目录")
     ouputs_log_dir: Optional[Path] = Field(default=Path("./outputs/log"), description="模型训练中间日志目录")
     ouputs_trace_dir: Optional[Path] = Field(default=Path("./outputs/trace"), description="模型训练记录目录")
     
@@ -78,9 +79,9 @@ class TrainConfig(BaseModel):
     weight_decay: float = Field(1e-4, ge=0, description="L2 正则化系数")
     momentum: float = Field(0.9, ge=0, le=1, description="动量因子，仅对 SGD 有效")
     
-    optiz: OptimizerType = OptimizerType.ADAMW
-    sched: Optional[str] = Field("cosine", description="学习率调度器")
-    loss_fn: Optional[str] =   Field("cross_entropy", description="损失函数类型")
+    optiz: OptimizerType   =   Field(OptimizerType.ADAMW, description="优化器")
+    sched: Optional[str]   =   Field(SchedulerType.COSINE, description="学习率调度器")
+    loss_fn: Optional[str] =   Field(LossType.CROSS_ENTROPY, description="损失函数类型")
     
     
     seed: int = 3407
@@ -111,6 +112,3 @@ class ExpContext(BaseModel):
     task_id: Optional[str] = Field(
         default_factory=lambda: str(uuid.uuid4()),
         description="实验唯一ID, 无需用户填写, 自动生成")
-    
-    # 允许通过 yaml 读取时忽略未知字段（为了兼容性）
-    model_config = ConfigDict(extra='ignore')

@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import List
+from typing import List, Dict
 
 import logging
 
@@ -13,9 +13,9 @@ def default_preprocess(text: str) -> List[str]:
 
 
 # 生成词表，返回词汇到索引的映射
-def build_vocab(texts: List[str], min_freq: int =1):
+def build_vocab(texts: List[str], min_freq: int = 1) -> Dict:
     """构建词表"""
-    logging.info(f"Building vocab with min_freq={min_freq}...")
+    logging.debug(f"Building vocab with min_freq={min_freq}...")
     all_tokens = []
     for text in texts:
         all_tokens.extend(default_preprocess(text))
@@ -30,7 +30,7 @@ def build_vocab(texts: List[str], min_freq: int =1):
     }
     vocab['<unk>'] = 0
     vocab['<pad>'] = 1
-    logging.info(f"Vocab size: {len(vocab)}")
+    logging.debug(f"Vocab size: {len(vocab)}")
     return vocab
 
 

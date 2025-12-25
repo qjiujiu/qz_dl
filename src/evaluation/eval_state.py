@@ -142,18 +142,22 @@ class EvalState(BaseModel):
     def state_one_vs_rest(self, k: int) -> State:
         return self._state_from_stats(k, self._cm_stats)
     
-    # NOTE 因为每个类别 one-vs-rest 的 TN 数量非常大，并且不平衡, 因此macro accuracy 常常不被推荐使用
+    def _fmt(self, val: float) -> float:
+        return round(val * 100, 2)
+        
+    # NOTE 因为每个类别 one-vs-rest 的 TN 数量非常大，并且不平衡, 因此 macro accuracy 常常不被推荐使用
     def calculate(self) -> Dict:
+        _fmt = self._fmt
         return {
-            "acc": self.micro_state.accuracy,
-            "micro":{    
-                "p": self.micro_precision,
-                "r": self.micro_recall,
-                "f1": self.micro_f1_score,
+            "acc": _fmt(self.micro_state.accuracy),
+            "micro": {    
+                "p": _fmt(self.micro_precision),
+                "r": _fmt(self.micro_recall),
+                "f1": _fmt(self.micro_f1_score),
             }, 
-            "macro":{
-                "p": self.macro_precision,
-                "r": self.macro_recall,
-                "f1": self.macro_f1_score
+            "macro": {
+                "p": _fmt(self.macro_precision),
+                "r": _fmt(self.macro_recall),
+                "f1": _fmt(self.macro_f1_score)
             }
         }

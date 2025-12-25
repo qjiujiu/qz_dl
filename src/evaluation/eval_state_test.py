@@ -190,7 +190,7 @@ class TestEvalState:
         result = eval_state.calculate()
         
         # 正确预测的样本数 / 总样本数
-        assert result["acc"] == pytest.approx(4 / 5)  
+        assert result["acc"] == pytest.approx(4 / 5 * 100, rel=0.001)  
 
     def test_to_dict_micro_precision(self, eval_state: EvalState):
         """ 测试micro precision 是否正确返回
@@ -201,14 +201,14 @@ class TestEvalState:
         print(eval_state.micro_state)
         
         result = eval_state.calculate()
-        assert result["micro"]["p"] == pytest.approx(4 / 5)  # precision = TP / (TP + FP)
+        assert result["micro"]["p"] == pytest.approx(4 / 5 * 100, rel=0.001)  # precision = TP / (TP + FP)
 
     def test_to_dict_micro_recall(self, eval_state: EvalState):
         """测试micro recall 是否正确返回"""
         result = eval_state.calculate()
         assert "micro" in result
         assert "r" in result["micro"]
-        assert result["micro"]["r"] == pytest.approx(4 / 5)  # recall = TP / (TP + FN)
+        assert result["micro"]["r"] == pytest.approx(4 / 5 * 100, rel=0.001)  # recall = TP / (TP + FN)
 
 
     def test_to_dict_macro_precision(self, eval_state: EvalState):
@@ -216,7 +216,7 @@ class TestEvalState:
         result = eval_state.calculate()
         assert "macro" in result
         assert "p" in result["macro"]
-        assert result["macro"]["p"] == pytest.approx(5 / 6)
+        assert result["macro"]["p"] == pytest.approx(5 / 6 * 100, rel=0.001)
 
     # 宏平均就是把各类的指标算术平均
     def test_to_dict_macro_recall(self, eval_state: EvalState):
@@ -224,5 +224,5 @@ class TestEvalState:
         result = eval_state.calculate()
         assert "macro" in result
         assert "r" in result["macro"]
-        assert result["macro"]["r"] == pytest.approx(5 / 6)
+        assert result["macro"]["r"] == pytest.approx(5 / 6 * 100, rel=0.001)
         
