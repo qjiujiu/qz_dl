@@ -14,7 +14,7 @@ class Seq2ImageClassifier(nn.Module):
             hidden_dim: int, 
             output_dim: int, 
             dropout: float = 0.5,
-            plugin_type: Optional[str] = None, 
+            plugin_type: Optional[PluginType] = None, 
         ):
         
         super().__init__()

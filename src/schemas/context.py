@@ -12,9 +12,10 @@ import torch
 # 基础组件配置
 class NLPConfig(BaseModel):
     vocab_size: Optional[int]     = Field(278, description="词汇表大小")
+    min_freq: Optional[int]       = Field(1,   description="最小词频")
     embedding_dim: Optional[int]  = Field(128, description="文本嵌入维度")
     max_len: Optional[int]        = Field(200, description="截断长度")
-    atten: PluginType              = Field(PluginType.SA, description="注意力机制类型")
+    atten: Optional[PluginType]   = Field(PluginType.SA, description="注意力机制类型")
 
 
 class VisionConfig(BaseModel):
@@ -35,7 +36,7 @@ class AdvConfig(BaseModel):
 class NetworkConfig(BaseModel):
     name: str = Field(..., description="模型架构名称")
     dropout_prob: Optional[float] = Field(0.5, ge=0, le=1)
-    plugin_type: Optional[str] = Field(default=None, description="可插拔模块名称, e.g. mlp/self/pe/self-pe")
+    plugin_type: Optional[str]    = Field(default=None, description="可插拔模块名称, e.g. mlp/self/pe/self-pe")
     
     # 统一使用 Path 类型，方便后续直接 .exists() 检查
     pretrained_dir: Optional[Path] = None 
