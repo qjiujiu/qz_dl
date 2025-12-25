@@ -5,6 +5,8 @@ class PluginType(str, Enum):
     PosEnc = "pe"
     SA = "self"
     SelfPE = "self-pe"
+    ID = "identity"
+    
     
 
 class AttackType(str, Enum):
