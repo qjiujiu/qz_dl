@@ -24,8 +24,8 @@ ctx = ExpContext(
         ),
     ),
     train_config = TrainConfig(
-        batch_size = 8,
-        epochs = 5,
+        batch_size = 512,
+        epochs = 30,
         lr = 1e-3,
         optiz = OptimizerType.ADAM,
         device = "cuda",

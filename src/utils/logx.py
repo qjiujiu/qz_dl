@@ -1,9 +1,9 @@
 import os
+import datetime 
 import logging
 import colorlog
 
-from typing import TypeVar, Optional, cast
-from typing_extensions import Protocol
+from typing_extensions import Protocol, TypeVar, Optional, cast
 from functools import partial
 
 
@@ -22,8 +22,6 @@ logging.addLevelName(LEVEL_HIGHLIGHT, "HIGHLIGHT")
 # 高于 INFO ，低于 WARNING
 LEVEL_SUCCESS = 25
 logging.addLevelName(LEVEL_SUCCESS, "SUCCESS")
-
-
 
 
 class LoggerX(Protocol):
@@ -67,7 +65,14 @@ def get_extended_logger(name: Optional[str] = None) -> LoggerX:
     if is_debug_mode:
         _enable_color_formatting(_logger)
         _logger.setLevel(logging.DEBUG)
-
+        
+    os.makedirs("outputs/logs", exist_ok=True)
+    file_handler = logging.FileHandler(
+        filename= f"outputs/logs/{datetime.date.today():%Y%m%d}.log" , 
+        encoding="utf-8"
+    )
+    
+    _logger.addHandler(file_handler)
     return cast(LoggerX, _logger)
 
 

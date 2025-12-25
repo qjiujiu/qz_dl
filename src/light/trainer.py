@@ -75,12 +75,12 @@ class Trainer:
             self.history['train_loss'].append(avg_loss)
             self.history['val_metrics'].append(val_metrics)
 
-            logger.info(f"Epoch {epoch},  avg_loss: {avg_loss:.4f}, val_metrics: {val_metrics}")
+            logger.info(f"Epoch {epoch}/{epochs},  avg_loss: {avg_loss:.4f}, val_metrics: {val_metrics}")
 
             if self.scheduler:
                 self.scheduler.step()
                 
-        self._save_checkpoint(suffix=f"epoch-{epochs}")
+        self._save_checkpoint(suffix=f"epoch-{epochs}-{self.ctx.task_id[:6]}")
         self._save_trace()
 
     @torch.no_grad()
