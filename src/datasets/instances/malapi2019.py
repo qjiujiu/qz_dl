@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
 from typing import List, Tuple, Dict
 from pathlib import Path
+from collections import Counter
 import torch
 import pickle
 
@@ -58,7 +59,18 @@ def _load_raw_text_data(data_dir: Path = "data/malapi2019", test_size: float = 0
     with open(text_path, 'r', encoding='utf-8') as f_t, open(label_path, 'r', encoding='utf-8') as f_l:
         texts = [line.strip() for line in f_t]
         labels = [label_map[line.strip()] for line in f_l]
-        
+    
+    # 统计每个类别的数量
+    label_counts = Counter(labels)
+    total_samples = len(labels)
+    
+    logger.info(f"total samples: {total_samples}, Class distribution in the raw data:")
+    for label, count in label_counts.items():
+        # 获取各个类别名称, 打印其所占的百分比
+        class_name = [k for k, v in label_map.items() if v == label][0]
+        percentage = (count / total_samples) * 100
+        logger.info(f"{class_name}: {count} samples, {percentage:.2f}% of total")
+
     return train_test_split(texts, labels, test_size=test_size, random_state=42)
 
 
