@@ -15,6 +15,7 @@ def build_loss_fn(cfg: TrainConfig) -> nn.Module:
     """
     creators = {
         LossType.CROSS_ENTROPY: lambda: nn.CrossEntropyLoss(),
+        LossType.FOCAL_LOSS: lambda: nn.CrossEntropyLoss(),
     }
     creator_fn = creators.get(cfg.loss_fn)
     
