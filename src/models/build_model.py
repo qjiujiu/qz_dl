@@ -49,7 +49,7 @@ def build_model(ctx: ExpContext) -> nn.Module:
         Seq2ImageClassifier.__name__: lambda: Seq2ImageClassifier(
             **common_args, 
             hidden_dim = 256
-        )
+        ),
     }
    
     model_name = cfg.name

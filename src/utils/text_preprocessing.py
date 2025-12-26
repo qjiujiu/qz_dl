@@ -8,6 +8,9 @@ def tokenize(text: str) -> List[str]:
     return text.split()
 
 
+def identity_preprocess(text: str) -> str:
+    return text
+
 def default_preprocess(text: str) -> List[str]:
     return text.strip().lower().split()
 

@@ -1,4 +1,5 @@
 from src.utils.logx import logger
+from src.utils.dumps import read_pickle, write_pickle
 from src.utils.text_preprocessing import (
     build_vocab, 
     default_preprocess, 
@@ -27,12 +28,12 @@ ID2LABEL = {v: k for k, v in LABEL_MAP.items()}
 
 
 class MalAPITextDataset(Dataset):
-    def __init__(self, texts: List[str], labels: List[int], vocab: Dict[str, int], max_len: int = 200, text_pipline: Callable[[str], List[str]] = default_preprocess):
+    def __init__(self, texts: List[str], labels: List[int], vocab: Dict[str, int], max_len: int = 200, text_pipeline: Callable[[str], List[str]] = default_preprocess):
         self.texts: List[int] = texts
         self.labels: List[int] = labels
         self.vocab: Dict = vocab
         self.max_len: int = max_len
-        self.text_pipline: Callable[[str], List[str]] = text_pipline
+        self.text_pipline: Callable[[str], List[str]] = text_pipeline
         
         # 缓存一下特殊的索引，避免由 dict 查找带来的开销
         self.unk_idx = self.vocab.get('<unk>', 0)
@@ -96,8 +97,8 @@ def _print_data_distribution(labels: List[int], title: str = "Dataset"):
     
 def _load_data(cfg: DataConfig) -> Tuple[Dataset, Dataset, Dict]:
     """根据配置加载 MalAPI 数据集"""
-    data_dir = Path(cfg.data_dir)
-    cache_dir = data_dir / "preprocessed" 
+    data_dir: Path = Path(cfg.data_dir)
+    cache_dir: Path = data_dir / "preprocessed" 
     cache_dir.mkdir(parents=True, exist_ok=True) 
     
     # 定义缓存文件路径
@@ -107,10 +108,12 @@ def _load_data(cfg: DataConfig) -> Tuple[Dataset, Dataset, Dict]:
     
     # 加载数据 (Cache 或 Raw)
     if cache_train_path.exists() and cache_test_path.exists() and cache_vocab_path.exists():
-        logger.debug(f"Cache Hit! Loading dataset: {cfg.dataset_name}")
-        with open(cache_train_path, "rb") as f: train_data = pickle.load(f)
-        with open(cache_test_path, "rb") as f:  test_data = pickle.load(f)
-        with open(cache_vocab_path, "rb") as f: vocab = pickle.load(f)
+        logger.debug(f"Cache Hit! Loading dataset: {cfg.dataset_name}")        
+        train_data, test_data, vocab = read_pickle(
+            cache_train_path, 
+            cache_test_path, 
+            cache_vocab_path
+        )
         
     else:
         logger.debug("Cache miss. Processing raw text data...")
@@ -127,9 +130,11 @@ def _load_data(cfg: DataConfig) -> Tuple[Dataset, Dataset, Dict]:
         test_data = (X_test, y_test)
         
         # 保存缓存
-        with open(cache_train_path, "wb") as f: pickle.dump(train_data, f)
-        with open(cache_test_path, "wb") as f: pickle.dump(test_data, f)
-        with open(cache_vocab_path, "wb") as f: pickle.dump(vocab, f)
+        write_pickle(
+            (cache_train_path, train_data),
+            (cache_test_path, test_data),
+            (cache_vocab_path, vocab)
+        )
         logger.debug("Cache saved successfully.")
 
     # [核心修改] 无论数据来源如何，都在此处统一打印分布
@@ -145,14 +150,13 @@ def _load_data(cfg: DataConfig) -> Tuple[Dataset, Dataset, Dict]:
     max_len = cfg.nlp_config.max_len
     
     if cfg.dataset_name == "malapi2019":
-        train_ds = MalAPITextDataset(train_data[0], train_data[1], vocab, max_len, text_pipline=default_preprocess)
-        test_ds = MalAPITextDataset(test_data[0], test_data[1], vocab, max_len, text_pipline=default_preprocess)
+        train_ds = MalAPITextDataset(train_data[0], train_data[1], vocab, max_len, text_pipeline=default_preprocess)
+        test_ds = MalAPITextDataset(test_data[0], test_data[1], vocab, max_len, text_pipeline=default_preprocess)
     
     elif cfg.dataset_name == "malapi2019-gc":
-        train_ds = MalAPITextDataset(train_data[0], train_data[1], vocab, max_len, text_pipline=dedup_preprocess)
-        test_ds = MalAPITextDataset(test_data[0], test_data[1], vocab, max_len, text_pipline=dedup_preprocess)
-    
-    
+        train_ds = MalAPITextDataset(train_data[0], train_data[1], vocab, max_len, text_pipeline=dedup_preprocess)
+        test_ds = MalAPITextDataset(test_data[0], test_data[1], vocab, max_len, text_pipeline=dedup_preprocess)
+  
     return train_ds, test_ds, vocab
 
 

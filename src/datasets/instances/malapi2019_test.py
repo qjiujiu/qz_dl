@@ -1,6 +1,6 @@
 
 from src.schemas.base_enums import TaskType
-from src.schemas.context import DataConfig, NLPConfig, TrainConfig
+from src.schemas.context import DataConfig, NLPConfig, TrainConfig, ExpContext
 from src.datasets.instances.malapi2019 import (
     MalAPITextDataset,
     _load_raw_text_data,
@@ -48,7 +48,7 @@ def mock_raw_data_dir():
 @pytest.fixture
 def mock_data_config(mock_raw_data_dir):
     return DataConfig(
-        dataset_name="malaapi1209",
+        dataset_name="malapi2019",
         data_dir = str(mock_raw_data_dir),
         task_type = TaskType.NLP,
         nlp_config = NLPConfig(
@@ -59,11 +59,14 @@ def mock_data_config(mock_raw_data_dir):
 
 
 @pytest.fixture
-def mock_exp_context(mock_data_config):
+def mock_exp_context(mock_data_config) -> ExpContext:
     # 简易 mock ExpContext（按你实际结构调整）
-    ctx = MagicMock()
+ 
+    ctx: ExpContext = MagicMock()
+    
     ctx.data_config = mock_data_config
     ctx.train_config = TrainConfig(batch_size=4)
+    ctx.network_config.name = "mock_model"
     return ctx
 
 
@@ -121,7 +124,7 @@ def test_end_to_end_data_loading(mock_data_config):
 
 
 def test_build_datamodule(mock_exp_context):
-    """端到端测试：build_datamodule → DataLoader → batch shape"""
+    """端到端测试：build_datamodule -> DataLoader ->  batch shape"""
     train_loader, val_loader, vocab = build_datamodule(mock_exp_context)
 
     vocab_size = len(vocab)
@@ -146,16 +149,20 @@ def test_build_datamodule(mock_exp_context):
 
 def test_cache_logic_works(mock_data_config):
     """验证缓存生成逻辑: 首次加载没有 cache -> 下一次加载 cache"""
+    
+    # 通过数据配置拿到缓存路径、数据集名称
     cache_dir = Path(mock_data_config.data_dir) / "preprocessed"
-
+    dataset_name = mock_data_config.dataset_name
+    
     # 先确保无缓存
-    for f in ["train.pkl", "test.pkl", "vocab.pkl"]:
+    for f in [f"{dataset_name}-train.pkl", f"{dataset_name}-test.pkl", f"{dataset_name}-vocab.pkl"]:
         (cache_dir / f).unlink(missing_ok=True)
+    
 
     # 第一次加载 ->  应生成 cache
     _load_data(mock_data_config)
-    assert (cache_dir / "train.pkl").exists()
-    assert (cache_dir / "vocab.pkl").exists()
+    assert (cache_dir / f"{dataset_name}-train.pkl").exists()
+    assert (cache_dir / f"{dataset_name}-vocab.pkl").exists()
 
     # 第二次加载->  应走缓存分支
     _load_data(mock_data_config)

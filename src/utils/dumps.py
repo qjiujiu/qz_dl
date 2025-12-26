@@ -2,7 +2,7 @@
 from dataclasses import is_dataclass, asdict
 from pydantic import BaseModel
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, List, Dict, Tuple
 
 import json
 import pickle
@@ -45,13 +45,18 @@ def dump_to_json(data: Dict, path: Path):
     logging.info(f"Data saved to {path}")
 
 
-def read_pickle(fname):
-    """读取pickle文件并返回数据"""
-    with open(fname, 'rb') as f:
-        return pickle.load(f)
+def read_pickle(*fnames: str) -> List:
+    """批量读取多个pickle文件并返回数据"""
+    data = []
+    for fname in fnames:
+        with open(fname, 'rb') as f:
+            data.append(pickle.load(f))
+    return data
 
-def write_pickle(fname, data):
-    """将数据写入pickle文件"""
-    with open(fname, 'wb') as f:
-        pickle.dump(data, f)
+# 批量写入
+def write_pickle(*fname_data_pairs):
+    """批量将数据写入pickle文件"""
+    for fname, data in fname_data_pairs:
+        with open(fname, 'wb') as f:
+            pickle.dump(data, f)
         
