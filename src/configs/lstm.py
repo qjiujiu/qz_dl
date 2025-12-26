@@ -54,3 +54,10 @@ ctx_mlp.network_config.plugin_type = PluginType.MlpAtten
 ctx_gas = ctx.model_copy(deep=True)
 ctx_gas.description = f"MalAPI2019 恶意软件API分类实验: {LSTMSeqClassifier.__name__} + 普通高斯噪声"
 ctx_gas.network_config.plugin_type = PluginType.GaussLinf
+
+
+# 我们把不同预处理的逻辑视为完全不同的数据集 (数据版本化管理 Data-Versioning)
+ctx_gc = ctx.model_copy(deep=True)
+ctx_gc.description = f"MalAPI2019-GC 恶意软件API分类实验: {LSTMSeqClassifier.__name__} + 自注意力机制"
+ctx_gc.data_config.dataset_name = "malapi2019-gc"
+ctx_gc.network_config.plugin_type = PluginType.ID
