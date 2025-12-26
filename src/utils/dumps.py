@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import json
+import pickle
 import logging
 
 def ensure_dirs(*dirs: str):
@@ -42,3 +43,15 @@ def dump_to_json(data: Dict, path: Path):
         json.dump(jsonable_data, f, indent=4, ensure_ascii=False)
     
     logging.info(f"Data saved to {path}")
+
+
+def read_pickle(fname):
+    """读取pickle文件并返回数据"""
+    with open(fname, 'rb') as f:
+        return pickle.load(f)
+
+def write_pickle(fname, data):
+    """将数据写入pickle文件"""
+    with open(fname, 'wb') as f:
+        pickle.dump(data, f)
+        

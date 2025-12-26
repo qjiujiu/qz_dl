@@ -6,6 +6,7 @@ class PluginType(str, Enum):
     SA = "self"
     SelfPE = "self-pe"
     ID = "identity"
+    GaussLinf = "gauss"
     
     
 

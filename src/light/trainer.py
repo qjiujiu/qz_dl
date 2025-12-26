@@ -120,6 +120,6 @@ class Trainer:
         
         trace_dir = self.ctx.network_config.ouputs_trace_dir / datetime.now().strftime("%Y-%m-%d")
         trace_dir.mkdir(parents=True, exist_ok=True)
-        trace_path = trace_dir / f"{self.task_id}.json"
+        trace_path = trace_dir / f"{self.model.__class__.__name__}-{self.task_id}.json"
         
         dump_to_json(trace, trace_path)

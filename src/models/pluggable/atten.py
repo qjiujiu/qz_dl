@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 @register_pluggable_module(PluginType.MlpAtten)
 class MLPAtten(nn.Module):
-    def __init__(self, embed_dim):
+    def __init__(self, embed_dim, **kwargs):
         super(MLPAtten, self).__init__()
         self.attn_mlp = nn.Sequential(
             nn.Linear(embed_dim, embed_dim),
@@ -28,7 +28,7 @@ class MLPAtten(nn.Module):
 
 @register_pluggable_module(PluginType.PosEnc)
 class SinusoidalPE(nn.Module):
-    def __init__(self, embed_dim):
+    def __init__(self, embed_dim, **kwargs):
         super(SinusoidalPE, self).__init__()
         self.embed_dim = embed_dim
 
@@ -50,7 +50,7 @@ class SinusoidalPE(nn.Module):
 
 @register_pluggable_module(PluginType.SA)
 class SelfAtten(nn.Module):
-    def __init__(self, embed_dim):
+    def __init__(self, embed_dim, **kwargs):
         super(SelfAtten, self).__init__()
         self.query = nn.Linear(embed_dim, embed_dim)
         self.key = nn.Linear(embed_dim, embed_dim)
@@ -69,7 +69,7 @@ class SelfAtten(nn.Module):
 
 @register_pluggable_module(PluginType.SelfPE)
 class SelfAttenWithSinusoidalPE(nn.Module):
-    def __init__(self, embed_dim):
+    def __init__(self, embed_dim, **kwargs):
         super(SelfAttenWithSinusoidalPE, self).__init__()
         self.query = nn.Linear(embed_dim, embed_dim)
         self.key = nn.Linear(embed_dim, embed_dim)

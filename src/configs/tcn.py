@@ -1,16 +1,14 @@
-from src.utils.cuda import select_gpu
 from src.schemas.context import ExpContext, NetworkConfig, DataConfig, NLPConfig, TrainConfig, AdvConfig
 from src.schemas.base_enums import TaskType, OptimizerType
 from src.schemas.block_enums import PluginType
-
 from pathlib import Path
 
-from src.models.conv1d_classifier import TextSeqClassifier
+from src.models.tcn_classifer import TCNSeqClassifier
 
 ctx = ExpContext(
-    description = f"MalAPI2019 恶意软件API分类实验: {TextSeqClassifier.__name__} + No Plugin", 
+    description = f"MalAPI2019 恶意软件API分类实验: {TCNSeqClassifier.__name__} + No Plugin", 
     network_config = NetworkConfig(
-        name = TextSeqClassifier.__name__,
+        name = TCNSeqClassifier.__name__,
         dropout_prob = 0.3,
         num_classes=8,
         plugin_type = PluginType.ID,
@@ -30,30 +28,29 @@ ctx = ExpContext(
         epochs = 20,
         lr = 1e-3,
         optiz = OptimizerType.ADAM,
-        device = select_gpu(),
+        device = "cuda",
     ),
     adv_config = AdvConfig(
       enable=False
     ),
 )
 
-
 ctx_sa = ctx.model_copy(deep=True)
-ctx_sa.description = f"MalAPI2019 恶意软件API分类实验: {TextSeqClassifier.__name__} + 自注意力机制"
+ctx_sa.description = f"MalAPI2019 恶意软件API分类实验: {TCNSeqClassifier.__name__} + 自注意力机制"
 ctx_sa.network_config.plugin_type = PluginType.SA
 
 ctx_sape = ctx.model_copy(deep=True)
-ctx_sape.description = f"MalAPI2019 恶意软件API分类实验: {TextSeqClassifier.__name__} + 自注意力机制 + 位置编码"
+ctx_sape.description = f"MalAPI2019 恶意软件API分类实验: {TCNSeqClassifier.__name__} + 自注意力机制 + 位置编码"
 ctx_sape.network_config.plugin_type = PluginType.SelfPE
 
 ctx_pe = ctx.model_copy(deep=True)
-ctx_pe.description = f"MalAPI2019 恶意软件API分类实验: {TextSeqClassifier.__name__} + 位置编码"
+ctx_pe.description = f"MalAPI2019 恶意软件API分类实验: {TCNSeqClassifier.__name__} + 位置编码"
 ctx_pe.network_config.plugin_type = PluginType.PosEnc
 
 ctx_mlp = ctx.model_copy(deep=True)
-ctx_mlp.description = f"MalAPI2019 恶意软件API分类实验: {TextSeqClassifier.__name__} + MLP注意力机制"
+ctx_mlp.description = f"MalAPI2019 恶意软件API分类实验: {TCNSeqClassifier.__name__} + MLP注意力机制"
 ctx_mlp.network_config.plugin_type = PluginType.MlpAtten
 
 ctx_gas = ctx.model_copy(deep=True)
-ctx_gas.description = f"MalAPI2019 恶意软件API分类实验: {TextSeqClassifier.__name__} + 普通高斯噪声"
+ctx_gas.description = f"MalAPI2019 恶意软件API分类实验: {TCNSeqClassifier.__name__} + 普通高斯噪声"
 ctx_gas.network_config.plugin_type = PluginType.GaussLinf
