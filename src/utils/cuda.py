@@ -1,7 +1,7 @@
 import torch
 import logging
 
-def select_gpu():
+def select_gpu() -> str:
     if not torch.cuda.is_available():
         return torch.device('cpu')
     
@@ -18,4 +18,4 @@ def select_gpu():
     
     # 自动获取剩余空间最多的 GPU
     logging.info(f"Auto-selected GPU {best_gpu} with {free_memory[best_gpu]} MiB free")
-    return torch.device(f'cuda:{best_gpu}')
+    return f"cuda:{best_gpu}"
