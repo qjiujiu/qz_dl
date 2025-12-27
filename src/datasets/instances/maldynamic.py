@@ -106,7 +106,7 @@ def build_datamodule(ctx: ExpContext) -> Tuple[DataLoader, DataLoader]:
     # 读取并合并数据
     logger.info("Loading JSON files...")
     for file_name in target_files:
-        file_path = data_dir / "Processed" / file_name
+        file_path = data_dir / "data" / "Processed" / file_name
             
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -141,7 +141,7 @@ def build_datamodule(ctx: ExpContext) -> Tuple[DataLoader, DataLoader]:
         api_sequences=all_apis,
         labels=all_labels,
         vocab=vocab,
-        max_len=ctx.data_config.max_len
+        max_len=ctx.data_config.nlp_config.max_len
     )
 
     # 划分训练/验证集
