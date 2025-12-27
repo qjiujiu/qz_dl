@@ -14,11 +14,9 @@ torch.cuda.reset_peak_memory_stats()
 
 
 # NOTE 此处区分了全量微调与局部微调两种方式
-def build_bert_model(ctx: ExpContext, freeze_backbone: bool = False) -> nn.Module:
+def build_bert_model(num_labels: int, freeze_backbone: bool = False) -> nn.Module:
     """ 构建 BERT 类模型
     """
-    # 获取模型名称 (优先从配置读取，如默认 codebert)
-    num_labels = ctx.network_config.num_classes
     
     logger.info(f"Building Bert Model, Freeze Backbone: {freeze_backbone}")
     

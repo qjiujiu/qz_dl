@@ -7,6 +7,6 @@ noise_types=("ctx" "ctx_sa" "ctx_sape" "ctx_mlp" "ctx_gas")
 # Loop over models and noise types to run the training scripts
 for model in "${models[@]}"; do
   for noise in "${noise_types[@]}"; do
-    python train_demo.py -c $model -n $noise
+    python train_2c.py -c $model -n $noise
   done
 done
