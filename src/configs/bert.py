@@ -11,7 +11,7 @@ ctx = ExpContext(
     network_config = NetworkConfig(
         name = "Bert",
         dropout_prob = 0.3,
-        num_classes=8,
+        num_classes = 8,
         plugin_type = PluginType.ID,
     ),
     data_config = DataConfig(
@@ -27,7 +27,7 @@ ctx = ExpContext(
     # BERT 微调通常使用较小的学习率 (2e-5 ~ 5e-5), weight_decay 取用 1e-2
     train_config = TrainConfig(
         batch_size = 256,
-        epochs = 5,
+        epochs = 20,
         lr = 2e-5,
         weight_decay=1e-2, 
         optiz = OptimizerType.ADAMW,

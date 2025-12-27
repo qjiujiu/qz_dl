@@ -21,7 +21,7 @@ class Trainer:
         self.val_loader = val_loader
         
         # 硬件设置
-        self.device = self.ctx.train_config.torch_device
+        self.device = self.ctx.train_config.device
         self.model.to(self.device)
         
         # 优化器、调度器、损失函数
