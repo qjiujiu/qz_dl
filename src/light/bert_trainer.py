@@ -101,8 +101,8 @@ class BertTrainer(Trainer):
             preds = torch.argmax(logits, dim=1)
             labels = batch["labels"]
             
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            all_preds.append(preds.cpu().numpy())
+            all_labels.append(labels.cpu().numpy())
         
         # 使用 EvalState 统一计算指标
         state = EvalState(
