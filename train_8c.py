@@ -45,7 +45,7 @@ if __name__ == "__main__":
     ctx = load_config_ctx(args.config, args.name)
     
     model = build_model(ctx)
-    train_loader, val_loader, vocab = malapi2019.build_datamodule(ctx)
+    train_loader, val_loader, _ = malapi2019.build_datamodule(ctx)
     
     logger.info(model)
     logger.info(f"Training Start. context: {ctx}")

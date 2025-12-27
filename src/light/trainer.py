@@ -103,7 +103,7 @@ class Trainer:
     def _save_checkpoint(self, suffix: str):
         name = self.ctx.network_config.name        
         
-        save_dir = self.ctx.network_config.checkpoint_dir / datetime.now().strftime("%Y-%m-%d")
+        save_dir = self.ctx.network_config.checkpoint_dir / self.ctx.data_config.dataset_name / datetime.now().strftime("%Y-%m-%d")
         save_dir.mkdir(parents=True, exist_ok=True)
         save_path = save_dir / f"{name}-{suffix}.pth"
         
@@ -118,7 +118,7 @@ class Trainer:
             "history": self.history
         }
         
-        trace_dir = self.ctx.network_config.ouputs_trace_dir / datetime.now().strftime("%Y-%m-%d")
+        trace_dir = self.ctx.network_config.ouputs_trace_dir / self.ctx.data_config.dataset_name / datetime.now().strftime("%Y-%m-%d")
         trace_dir.mkdir(parents=True, exist_ok=True)
         trace_path = trace_dir / f"{self.model.__class__.__name__}-{self.task_id}.json"
         
