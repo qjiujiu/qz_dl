@@ -10,17 +10,27 @@ from torch.optim import lr_scheduler
 
 
 def build_loss_fn(cfg: TrainConfig) -> nn.Module:
-    """
-    构建损失函数
+    """ NOTE 构建损失函数, 关于损失函数, 模型无论是单标签多分类, 或是多标签多分类, 全都建议直接输出原生 logits 而不做任何变动, 
+        只需要使用 torch 提供的损失函数即可, 这样模型的改动量最小, 是一个工程方面的最佳实践, 
+        
+        NOTE e.g. 假设一个 lstm 模型, 先前用于单标签多分类，现在改用 BCEWithLogitsLoss, 那么这个损失函数,
+        其实已将 Sigmoid + BCELoss  并在一起计算, 并用 LogSumExp 技巧保证数值稳定性, 不需要修改模型
     """
     creators = {
+        # 多分类 (单选)
         LossType.CROSS_ENTROPY: lambda: nn.CrossEntropyLoss(),
+        
+        # 多标签多标签, 或者二分类
+        LossType.BCE_LOGITS: lambda: nn.BCEWithLogitsLoss(),
+        
+        # 暂时用 CE 占位，如果未来实现了 FocalLoss 类可以替换这里
         LossType.FOCAL_LOSS: lambda: nn.CrossEntropyLoss(),
     }
+    
     creator_fn = creators.get(cfg.loss_fn)
     
     if creator_fn is None:
-        logger.warning("Loss not define, falling back to CrossEntropy")
+        logger.warning(f"Loss type '{cfg.loss_fn}' not defined, falling back to CrossEntropy")
         creator_fn = creators.get(LossType.CROSS_ENTROPY)
         
     return creator_fn()
