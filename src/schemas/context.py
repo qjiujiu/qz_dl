@@ -53,9 +53,9 @@ class DataConfig(BaseModel):
     dataset_name: str
     data_dir: Path
     task_type: TaskType = Field(..., description="明确任务类型，用于校验")
-    
-    num_workers: int = Field(4, ge=0)
-    pin_memory: bool = True
+    test_size: Optional[float] = Field(0.2, ge=1, le=1, description="测试相对于总数据集的比例")
+    num_workers: Optional[int] = Field(4, ge=0)
+    pin_memory: Optional[bool] = True
 
     # 使用 Optional 配合默认 None，这样比起 default_factory 更安全
     nlp_config: Optional[NLPConfig] = None

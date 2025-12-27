@@ -29,7 +29,7 @@ ctx = ExpContext(
         epochs = 20,
         lr = 1e-3,
         optiz = OptimizerType.ADAM,
-        device = "cuda:1",
+        device = select_gpu(),
     ),
     adv_config = AdvConfig(
       enable=False

@@ -13,7 +13,7 @@ from typing import List, Tuple, Dict, Callable
 from collections import Counter
 from pathlib import Path
 import torch
-import pickle
+import numpy as np
 
 
 
@@ -84,6 +84,11 @@ def _load_raw_text_data(data_dir: Path, test_size: float = 0.2) -> Tuple:
 
 def _print_data_distribution(labels: List[int], title: str = "Dataset"):
     """辅助函数：统计并打印数据分布"""
+    
+    if isinstance(labels, torch.Tensor) or isinstance(labels, np.ndarray):
+        # numpy 与 torch 具有相同的接口, 且对后者而言, .tolist() 会自动处理 cpu/cuda 和 detach
+        labels = labels.tolist()
+        
     label_counts = Counter(labels)
     total_samples = len(labels)
     
@@ -119,7 +124,7 @@ def _load_data(cfg: DataConfig) -> Tuple[Dataset, Dataset, Dict]:
         
     else:
         logger.debug("Cache miss. Processing raw text data...")
-        X_train, X_test, y_train, y_test = _load_raw_text_data(data_dir)
+        X_train, X_test, y_train, y_test = _load_raw_text_data(data_dir=data_dir, test_size=cfg.test_size)
         
         # 获取最小词频配置
         min_freq = 1

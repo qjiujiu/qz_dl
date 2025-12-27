@@ -1,3 +1,4 @@
+from src.utils.cuda import select_gpu
 from src.schemas.context import ExpContext, NetworkConfig, DataConfig, NLPConfig, TrainConfig, AdvConfig
 from src.schemas.base_enums import TaskType, OptimizerType
 from src.schemas.block_enums import PluginType
@@ -28,7 +29,7 @@ ctx = ExpContext(
         epochs = 20,
         lr = 1e-3,
         optiz = OptimizerType.ADAM,
-        device = "cuda",
+        device = select_gpu(),
     ),
     adv_config = AdvConfig(
       enable=False
