@@ -8,6 +8,8 @@ from transformers import AutoModelForSequenceClassification
 
 import torch
 import torch.nn as nn
+import argparse
+
 
 torch.cuda.empty_cache()
 torch.cuda.reset_peak_memory_stats() 
@@ -18,7 +20,7 @@ def build_bert_model(num_labels: int, freeze_backbone: bool = False) -> nn.Modul
     """ 构建 BERT 类模型
     """
     
-    logger.info(f"Building Bert Model, Freeze Backbone: {freeze_backbone}")
+    logger.highlight(f"Building Bert Model, Freeze Backbone: {freeze_backbone}")
     
     # 加载预训练模型
     model = AutoModelForSequenceClassification.from_pretrained(
@@ -26,6 +28,8 @@ def build_bert_model(num_labels: int, freeze_backbone: bool = False) -> nn.Modul
         num_labels = num_labels,                                        # 分类头的分类个数
         weights_only = False                                            # 解决 Pickle 安全警告
     )
+    
+    
 
     # 如果冻结基座模型的参数, 冻结所有参数
     if not freeze_backbone:
@@ -48,12 +52,12 @@ def build_bert_model(num_labels: int, freeze_backbone: bool = False) -> nn.Modul
 
 
 
-def run_training(ctx: ExpContext):
+def run_training(ctx: ExpContext, freeze_backbone: bool):
     logger.info(f"Loading Pretrained Model: {ctx.network_config.name}")
-    model = AutoModelForSequenceClassification.from_pretrained(
-        pretrained_model_name_or_path = 'microsoft/codebert-base',
-        num_labels=ctx.network_config.num_classes,
-        weights_only=False, 
+    
+    model = build_bert_model(
+        num_labels=ctx.network_config.num_classes, 
+        freeze_backbone=freeze_backbone
     )
         
     # 加载数据
@@ -69,4 +73,16 @@ def run_training(ctx: ExpContext):
 
 
 if __name__ == "__main__":
-    run_training(ctx)
+    # 定义命令行参数解析
+    parser = argparse.ArgumentParser(description="Run BERT Training")
+    
+    # 添加 --fb 参数
+    # action="store_true" 表示：如果在命令行中写了 --fb，则值为 True；如果不写，默认为 False
+    parser.add_argument(
+        "--fb", 
+        action="store_true", 
+        help="Freeze Backbone: Add this flag to freeze BERT layers and only train the classifier head."
+    )
+    
+    args = parser.parse_args()
+    run_training(ctx, freeze_backbone=args.fb)
