@@ -1,4 +1,5 @@
 from src.utils.logx import logger
+from src.utils.dumps import dump_to_json, load_from_json
 from src.schemas.context import ExpContext, DataConfig
 from src.utils.text_preprocessing import build_vocab
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -119,10 +120,19 @@ def build_datamodule(ctx: ExpContext) -> Tuple[DataLoader, DataLoader]:
         raise ValueError("No data loaded! Please check data paths.")
 
     # 构建词表, 存储词表大小
+    vocab_path = data_dir / "vocab.json"
     
-    vocab = build_vocab(all_apis, min_freq=ctx.data_config.min_freq or 1)
+    if vocab_path.exists():
+        logger.info(f"Loading existing vocabulary from {vocab_path}")
+        vocab = load_from_json(vocab_path)
+    else:
+        logger.info(f"Vocab not found at {vocab_path}, building new one...")
+        vocab = build_vocab(all_apis, min_freq=ctx.data_config.nlp_config.min_freq)
+        dump_to_json(vocab, vocab_path)
+            
+    
+    # 获取词表大小
     ctx.network_config.vocab_size = len(vocab)
-    
     logger.info(f"Vocab Size: {len(vocab)}")
 
     # 实例化 Dataset

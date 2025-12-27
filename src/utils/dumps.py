@@ -2,7 +2,7 @@
 from dataclasses import is_dataclass, asdict
 from pydantic import BaseModel
 from pathlib import Path
-from typing import Any, List, Dict, Tuple
+from typing import Any, List, Dict, Union
 
 import json
 import pickle
@@ -45,9 +45,21 @@ def dump_to_json(data: Dict, path: Path):
     logging.info(f"Data saved to {path}")
 
 
+def load_from_json(path: Path) -> Union[Dict, List]:
+    """通用方法：从指定路径加载 JSON 文件
+        1. 使用 `json.load` 读取 JSON 文件
+        2. 返回数据（转换为字典或列表）
+    """
+    # 读取 JSON 文件
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    logging.info(f"Data loaded from {path}")
+    return data
+
+
 
 # 由于 Pickle 格式存在安全漏洞，新版的都推荐使用更加安全的.safetensors 格式。
-
 def read_pickle(*fnames: str) -> List:
     """批量读取多个pickle文件并返回数据"""
     data = []
