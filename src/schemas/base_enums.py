@@ -18,3 +18,4 @@ class SchedulerType(str, Enum):
 class LossType(str, Enum):
     CROSS_ENTROPY = "ce"
     FOCAL_LOSS = "focal"
+    BCE_LOGITS = "bce_logits"
