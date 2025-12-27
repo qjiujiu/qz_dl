@@ -1,5 +1,6 @@
 from src.utils.logx import logger
 from src.utils.dumps import dump_to_json, load_from_json
+from src.utils.text_preprocessing import dedup_preprocess
 from src.schemas.context import ExpContext, DataConfig
 from src.utils.text_preprocessing import build_vocab
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -10,7 +11,7 @@ import torch
 import numpy as np
 
 
-
+# 多标签-多分类任务(十五分类)
 CLASS_NAMES = [
     "benign", "malware", "trojan", "banker", "pua", 
     "downloader", "adware", "dropper", "spyware", "virus", 
@@ -29,7 +30,7 @@ class MalDynamic(Dataset):
             vocab: Dict[str, int], 
             max_len: int = 200
         ):
-        """
+        """ 数据来源
             api_sequences: API 调用序列列表，每个元素是 List[str]
             labels: 标签列表，每个元素是 0/1 的 List[int] (长度15)
             vocab: 词表
@@ -49,8 +50,8 @@ class MalDynamic(Dataset):
 
     def __getitem__(self, idx):
         # 获取原始数据
-        tokens = self.api_sequences[idx] # List[str]
-        label_vec = self.labels[idx]     # List[int] e.g. [0, 1, 0, ...]
+        tokens = dedup_preprocess(self.api_sequences[idx]) 
+        label_vec = self.labels[idx]
         
         # (Token -> ID)
         indices = [self.vocab.get(t, self.unk_idx) for t in tokens]

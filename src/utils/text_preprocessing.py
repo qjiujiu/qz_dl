@@ -1,7 +1,8 @@
 from collections import Counter
-from typing import List, Dict
+from typing import List, Dict, Union
 from itertools import groupby
 import logging
+
 
 # 词元化函数，将文本拆分为词元, 基于空格进行分词
 def tokenize(text: str) -> List[str]:
@@ -35,20 +36,27 @@ def ngram_preprocess(text: str, n: int = 2) -> List[str]:
     return ["_".join(gram) for gram in ngrams]
 
 
-def dedup_preprocess(text: str) -> List[str]:
-    """ 预处理： 分词 + 连续重复去重 (Folding), 其实就是分组循环算法
-        e.g. "Open Read Read Read Close Open" -> ["open", "read", "close", "open"]
+def dedup_preprocess(text: Union[List[str], str]) -> List[str]:
+    """ 预处理：标准化 + 连续重复去重 (Folding), 支持输入字符串或字符串列表。
+        Example:
+            Input:  "Open Read Read Read Close Open" 
+            Output: ["open", "read", "close", "open"]
+            
+            Input:  ["Open", "Read", "Read", "Read", "Close"]
+            Output: ["open", "read", "close"]
     """
-    # 1. 基础清洗与分词
-    tokens = text.strip().lower().split()
-    
+    # 基础清洗与分词, 若是字符串先做分割
+    if isinstance(text, str):
+        text = text.strip().lower().split()
+        
+    tokens = [t.lower() for t in text if isinstance(t, str)]
+          
     if not tokens:
         return []
 
     # 核心逻辑：利用 groupby 去除连续重复
     # 其中 k 是组名(token), g 是分组迭代器。我们只需要 k
     deduped_tokens = [k for k, g in groupby(tokens)]
-    
     return deduped_tokens
 
 
