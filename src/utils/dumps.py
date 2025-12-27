@@ -45,6 +45,9 @@ def dump_to_json(data: Dict, path: Path):
     logging.info(f"Data saved to {path}")
 
 
+
+# 由于 Pickle 格式存在安全漏洞，新版的都推荐使用更加安全的.safetensors 格式。
+
 def read_pickle(*fnames: str) -> List:
     """批量读取多个pickle文件并返回数据"""
     data = []

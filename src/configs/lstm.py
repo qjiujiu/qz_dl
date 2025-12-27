@@ -1,9 +1,11 @@
+from src.utils.cuda import select_gpu
 from src.schemas.context import ExpContext, NetworkConfig, DataConfig, NLPConfig, TrainConfig, AdvConfig
 from src.schemas.base_enums import TaskType, OptimizerType
 from src.schemas.block_enums import PluginType
 from pathlib import Path
 
 from src.models.lstm_classifer import LSTMSeqClassifier
+
 
 ctx = ExpContext(
     description = f"MalAPI2019 恶意软件API分类实验: {LSTMSeqClassifier.__name__} + No Plugin", 
@@ -28,7 +30,7 @@ ctx = ExpContext(
         epochs = 20,
         lr = 1e-3,
         optiz = OptimizerType.ADAM,
-        device = "cuda",
+        device = select_gpu(),
     ),
     adv_config = AdvConfig(
       enable=False

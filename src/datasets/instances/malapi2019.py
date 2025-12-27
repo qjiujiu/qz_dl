@@ -26,8 +26,10 @@ LABEL_MAP = {
 # 反向映射, 主要用于打印日志
 ID2LABEL = {v: k for k, v in LABEL_MAP.items()}
 
-
 class MalAPITextDataset(Dataset):
+    """ 
+    https://www.kaggle.com/datasets/focatak/malapi2019
+    """
     def __init__(self, texts: List[str], labels: List[int], vocab: Dict[str, int], max_len: int = 200, text_pipeline: Callable[[str], List[str]] = default_preprocess):
         self.texts: List[int] = texts
         self.labels: List[int] = labels

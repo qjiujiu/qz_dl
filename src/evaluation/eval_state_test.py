@@ -1,16 +1,16 @@
-import numpy as np
-import pytest
-
 from src.evaluation.state import State
 from src.evaluation.eval_state import EvalState 
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+import pytest
+import numpy as np
+
 
 # 模拟一个简单的 EvalState
 @pytest.fixture
 def eval_state() -> EvalState:
-    labels = np.array([0, 1, 0, 1, 0])  # 真实标签
+    labels = np.array([0, 1, 0, 1, 0])    # 真实标签
     predicts = np.array([0, 1, 1, 1, 0])  # 预测结果
     return EvalState(labels=labels, predicts=predicts, total_classes=2)
-
 
 
 class TestEvalState:
@@ -133,7 +133,7 @@ class TestEvalState:
         preds = np.array([0, 2, 2, 1, 1])
         es = EvalState(labels=labels, predicts=preds)
 
-        ms = es.micro_state
+        ms = es._micro_state
         # 通过上面的混淆矩阵 _cm_stats 得到
         # TP sum=3 FP sum=2 FN sum=2 TN sum=8
         assert ms.TP == 3
@@ -198,7 +198,7 @@ class TestEvalState:
             NOTE 这是必然且正确的，宏平均的逻辑是把每一个类别都当成一次独立的“二分类任务”，然后把所有任务的 TP/FP/TN/FN 加起来, 因此 Micro 指标的统计基数本来就是 样本数 × 类别数，而不是样本数。
         """
         print(eval_state)
-        print(eval_state.micro_state)
+        print(eval_state._micro_state)
         
         result = eval_state.calculate()
         assert result["micro"]["p"] == pytest.approx(4 / 5 * 100, rel=0.001)  # precision = TP / (TP + FP)
@@ -226,3 +226,98 @@ class TestEvalState:
         assert "r" in result["macro"]
         assert result["macro"]["r"] == pytest.approx(5 / 6 * 100, rel=0.001)
         
+
+
+class TestEvalStateAgainstSklearn:
+    """对拍 Sklearn 官方库进行对齐测试，确保计算逻辑无误"""
+
+    def _compare_metrics(self, y_true, y_pred, es: EvalState):
+        """辅助函数：执行对比断言"""
+        # Accuracy
+        sk_acc = accuracy_score(y_true, y_pred)
+        
+        # calculate() 返回的是百分比, sklearn (0-1)，需要转换
+        # 为了精确对比，建议直接取 es.micro_state.accuracy 或 es.micro_precision 原始值
+        assert es.overall_accuracy == pytest.approx(sk_acc)
+
+        # Micro Metrics
+        # Micro Precision/Recall/F1 在多分类中通常等于 Accuracy (除非有未分类样本，这里假设全是有效预测)
+        sk_micro_p = precision_score(y_true, y_pred, average='micro', zero_division=0)
+        sk_micro_r = recall_score(y_true, y_pred, average='micro', zero_division=0)
+        sk_micro_f1 = f1_score(y_true, y_pred, average='micro', zero_division=0)
+
+        assert es.micro_precision == pytest.approx(sk_micro_p)
+        assert es.micro_recall == pytest.approx(sk_micro_r)
+        assert es.micro_f1_score == pytest.approx(sk_micro_f1)
+
+        # Macro Metrics
+        sk_macro_p = precision_score(y_true, y_pred, average='macro', zero_division=0)
+        sk_macro_r = recall_score(y_true, y_pred, average='macro', zero_division=0)
+        sk_macro_f1 = f1_score(y_true, y_pred, average='macro', zero_division=0)
+
+        assert es.macro_precision == pytest.approx(sk_macro_p)
+        assert es.macro_recall == pytest.approx(sk_macro_r)
+        assert es.macro_f1_score == pytest.approx(sk_macro_f1)
+
+        # Confusion Matrix
+        sk_cm = confusion_matrix(y_true, y_pred)
+        n_classes = max(y_true.max(), y_pred.max()) + 1
+        assert np.all(es.confusion_matrix[:n_classes, :n_classes] == sk_cm)
+
+    def test_compare_simple_binary(self):
+        """对比简单二分类"""
+        y_true = np.array([0, 1, 0, 1, 0])
+        y_pred = np.array([0, 1, 1, 1, 0])
+        es = EvalState(labels=y_true, predicts=y_pred)
+        
+        self._compare_metrics(y_true, y_pred, es)
+
+    def test_compare_multiclass_balanced(self):
+        """对比多分类（平衡）"""
+        y_true = np.array([0, 1, 2, 0, 1, 2])
+        y_pred = np.array([0, 2, 1, 0, 1, 1])
+        es = EvalState(labels=y_true, predicts=y_pred)
+        
+        self._compare_metrics(y_true, y_pred, es)
+
+    def test_compare_multiclass_imbalanced_zeros(self):
+        """对比多分类（不平衡，含除零风险）
+        Class 3 既没有真实标签，也没有预测结果，Sklearn 会报 UndefinedMetricWarning 并返回 0
+        """
+        # 0, 1, 2 出现，3 未出现
+        y_true = np.array([0, 1, 2, 0, 1, 2])
+        y_pred = np.array([0, 2, 1, 0, 1, 1])
+        
+        # 强制指定 total_classes=4，引入一个空的 Class 3
+        es = EvalState(labels=y_true, predicts=y_pred, total_classes=4)
+        
+        # Sklearn 计算时也需要告知有哪些 labels，否则它会自动忽略 class 3
+        labels = [0, 1, 2, 3]
+        
+        # Macro Precision:
+        # Sklearn 会算出 [P0, P1, P2, 0.0] 然后求平均
+        sk_macro_p = precision_score(y_true, y_pred, labels=labels, average='macro', zero_division=0)
+        assert es.macro_precision == pytest.approx(sk_macro_p)
+        
+        # Macro Recall
+        sk_macro_r = recall_score(y_true, y_pred, labels=labels, average='macro', zero_division=0)
+        assert es.macro_recall == pytest.approx(sk_macro_r)
+
+    def test_compare_perfect_match(self):
+        """对比完全正确的情况"""
+        y_true = np.array([0, 1, 2, 3] * 10)
+        y_pred = np.array([0, 1, 2, 3] * 10)
+        es = EvalState(labels=y_true, predicts=y_pred)
+        
+        self._compare_metrics(y_true, y_pred, es)
+
+    def test_compare_complete_failure(self):
+        """对比完全错误的情况"""
+        y_true = np.array([0, 0, 0])
+        y_pred = np.array([1, 1, 1])
+        es = EvalState(labels=y_true, predicts=y_pred, total_classes=2)
+        
+        # 这种情况下
+        # Micro: Acc=0, P=0, R=0
+        # Macro: Class0(P=0,R=0), Class1(P=0,R=0) -> Mean=0
+        self._compare_metrics(y_true, y_pred, es)

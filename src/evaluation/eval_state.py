@@ -85,11 +85,28 @@ class EvalState(BaseModel):
             TN=int(TNs[idx]),
             FN=int(FNs[idx])
         )
-
-    # ===== Micro Average (微平均) =====
-    # 微平均是将所有类别的 TP/FP/FN/TN 累加，构成一个全局的 State
+    
     @property
-    def micro_state(self) -> State:
+    def overall_accuracy(self) -> float:
+        # 通过 _cm_stats 获取所有类别的 TP (即混淆矩阵的对角线)
+        TPs, _, _, _ = self._cm_stats
+        total_correct = TPs.sum()
+        
+        # 获取总样本数 (直接通过 confusion matrix sum)
+        total_samples = self.confusion_matrix.sum()
+        
+        if total_samples == 0:
+            return 0.0
+            
+        return float(total_correct / total_samples)
+    
+
+    @property
+    def _micro_state(self) -> State:
+        """ Micro Average(微平均), 是将所有类别的 TP/FP/FN/TN 累加，构成一个全局的 State,
+            NOTE 在多分类任务中，绝对不要使用 包含 TN 的 Micro Accuracy 来代表模型的准确率，因为它会被 TN 严重注水 (Inflated), 
+                而是使用 Micro Precision 来对齐 Sklearn 的 Accuracy, 这是一个经典的 TN 陷阱!
+        """
         TPs, FPs, TNs, FNs = self._cm_stats
         return State(
             TP=int(TPs.sum()),
@@ -100,15 +117,15 @@ class EvalState(BaseModel):
 
     @property
     def micro_precision(self) -> float:
-        return self.micro_state.precision
+        return self._micro_state.precision
 
     @property
     def micro_recall(self) -> float:
-        return self.micro_state.recall
+        return self._micro_state.recall
 
     @property
     def micro_f1_score(self) -> float:
-        return self.micro_state.f1
+        return self._micro_state.f1
     
     # ===== Macro Average (宏平均) =====
     # 宏平均是先计算每个类别的指标，然后求算术平均
@@ -144,17 +161,21 @@ class EvalState(BaseModel):
     
     def _fmt(self, val: float) -> float:
         return round(val * 100, 2)
-        
+
     # NOTE 因为每个类别 one-vs-rest 的 TN 数量非常大，并且不平衡, 因此 macro accuracy 常常不被推荐使用
     def calculate(self) -> Dict:
         _fmt = self._fmt
         return {
-            "acc": _fmt(self.micro_state.accuracy),
+            "acc": _fmt(self.overall_accuracy),
+            
+            # 单标签多分类任务上面, i.e. 单标签(Single-label +  强制预测 (Must Predict One),  会有 ACC == P == R == F1 恒成立
+            # 无论是否数据是否平均都成立, 仅在多标签分类任务, P/R/F1 才会不同于 Acc
             "micro": {    
                 "p": _fmt(self.micro_precision),
                 "r": _fmt(self.micro_recall),
                 "f1": _fmt(self.micro_f1_score),
             }, 
+
             "macro": {
                 "p": _fmt(self.macro_precision),
                 "r": _fmt(self.macro_recall),
