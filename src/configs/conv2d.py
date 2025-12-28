@@ -80,6 +80,14 @@ ctx_gc = with_varients(ctx8, model_name = Seq2ImageClassifier.__name__,
 # MalAnalysis (二分类)
 # ==========================================
 
+tc2 = TrainConfig(
+    batch_size = 128, 
+    epochs = 20,
+    lr = 1e-3,
+    optiz = OptimizerType.ADAM,
+    device = select_gpu(),
+)
+
 nc2 = NetworkConfig(
     name = Seq2ImageClassifier.__name__,
     dropout_prob = 0.3,
@@ -102,7 +110,7 @@ ctx2 = ExpContext(
     description = f"MalAnalysis 二分类实验: {Seq2ImageClassifier.__name__} + No Plugin", 
     network_config = nc2,
     data_config = dc2, 
-    train_config = tc, # 复用 batch_size=64 的配置
+    train_config = tc2,
     adv_config = AdvConfig(
       enable=False
     ),
@@ -152,7 +160,7 @@ dcm =  DataConfig(
 
 # NOTE: 多标签 loss + 较小的 Batch Size
 tcm = TrainConfig(
-    batch_size = 64, # 保持 64 防 OOM
+    batch_size = 64, # 保持 64 避免 OOM
     epochs = 20,
     lr = 1e-3,
     optiz = OptimizerType.ADAM,
