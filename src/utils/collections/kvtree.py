@@ -2,7 +2,7 @@ import json
 from collections import UserDict, defaultdict
 from typing import Any, Union, List, Optional
 
-class IndexedKVTree(UserDict):
+class KVTree(UserDict):
     """ 
     IndexedKVTree: 一个支持模糊路径搜索的高性能嵌套字典包装器。
     
@@ -157,7 +157,7 @@ if __name__ == '__main__':
         "logs": '[{"id": 1, "details": {"nested_json": "true"}}]'
     }
 
-    tree = IndexedKVTree(data)
+    tree = KVTree(data)
 
     # 这里 section_A 和 target_value 中间隔了两层，依然能找到
     print("模糊路径测试 (跨越 useless_layer 和 wrapper):")
