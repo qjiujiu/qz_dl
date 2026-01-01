@@ -51,21 +51,25 @@ class TextSeqClassifier(nn.Module):
             nn.Linear(256, output_dim)
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, embedded: torch.Tensor, embed_perturbation: Optional[torch.Tensor] = None) -> torch.Tensor:
         # Embedding x: [Batch, SeqLen] -> [Batch, SeqLen, EmbedDim]
-        x = self.embedding(x)
-        x = self.plugin(x)
+        embedded = self.embedding(embedded)
+        if embed_perturbation is not None:
+            embedded = embedded + embed_perturbation
+
+
+        embedded = self.plugin(embedded)
 
         # Transpose for Conv1d [Batch, SeqLen, EmbedDim] -> [Batch, EmbedDim, SeqLen]
-        x = x.permute(0, 2, 1)
+        embedded = embedded.permute(0, 2, 1)
 
-        x = self.conv_layers(x)   # [Batch, Hidden*2, Reduced_SeqLen]
-        x = self.adaptive_pool(x) # [Batch, Hidden*2, 1]
-        x = x.squeeze(-1)         # [Batch, Hidden*2]
+        embedded = self.conv_layers(embedded)   # [Batch, Hidden*2, Reduced_SeqLen]
+        embedded = self.adaptive_pool(embedded) # [Batch, Hidden*2, 1]
+        embedded = embedded.squeeze(-1)         # [Batch, Hidden*2]
 
         # MLP
-        x = self.dropout(x)
-        logits = self.mlp(x)
+        embedded = self.dropout(embedded)
+        logits = self.mlp(embedded)
         return logits
 
 

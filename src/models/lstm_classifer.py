@@ -44,11 +44,13 @@ class LSTMSeqClassifier(nn.Module):
             nn.Linear(lstm_out_dim // 2, output_dim)
         )
 
-    def forward(self, x: torch.Tensor, lengths: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, embed_perturbation: Optional[torch.Tensor] = None) -> torch.Tensor:
         # 输入数据 x: [batch, seq_len] -> [batch, seq_len, embed_dim]
         embedded = self.embedding(x)  
+        if embed_perturbation is not None:
+            embedded = embedded + embed_perturbation
+
         embedded = self.plugin(embedded)
-        
         # hidden: [num_layers * num_directions, batch, hidden_size]
         output, (hidden, cell) = self.lstm(embedded)
         pool_out = torch.max(output, dim=1)[0]

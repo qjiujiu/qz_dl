@@ -108,17 +108,19 @@ class TCNSeqClassifier(nn.Module):
         self.fc = nn.Linear(tcn_channels[-1], output_dim)
     
     
-    def forward(self, x):
+    def forward(self, embedded: torch.Tensor, embed_perturbation: Optional[torch.Tensor] = None):
         # Embedding -> [batch, seq_len, embed_dim]
-        x = self.embedding(x) 
+        embedded = self.embedding(embedded) 
+        if embed_perturbation is not None:
+            embedded = embedded + embed_perturbation
         
         # Plugin (在转置之前进行，因为 Attention 通常处理 seq_len 维度)
-        x = self.plugin(x)     
+        embedded = self.plugin(embedded)     
 
         # Conv1d 需要通道在中间: [batch, seq_len, embed_dim] -> [batch, embed_dim, seq_len]
-        x = x.permute(0, 2, 1)
+        embedded = embedded.permute(0, 2, 1)
         
-        tcn_out = self.tcn(x)         # [batch, channels, seq_len]
+        tcn_out = self.tcn(embedded)         # [batch, channels, seq_len]
         out = torch.max(tcn_out, dim=2)[0]
 
         # 策略 A: 取最后一个时间步 (适合因果卷积/序列建模, RNN/LSTM标准操作, 但是此处使用这个策略可能会被padding影响)
