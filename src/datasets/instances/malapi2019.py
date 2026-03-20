@@ -175,6 +175,7 @@ def build_datamodule(ctx: ExpContext) -> Tuple[DataLoader, DataLoader, Dict]:
     cfg = ctx.data_config
     train_ds, test_ds, vocab = _load_data(cfg)
     
+
     if vocab:
         vocab_size = len(vocab)
         cfg.nlp_config.vocab_size = vocab_size

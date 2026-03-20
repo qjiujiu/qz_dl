@@ -12,4 +12,5 @@ class PluginType(str, Enum):
 
 class AttackType(str, Enum):
     FGSM = "fgsm"
+    FGM = "fgm"
     PGD  = "pgd"

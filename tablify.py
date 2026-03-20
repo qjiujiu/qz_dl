@@ -10,7 +10,7 @@ from src.utils.collections import KVTree
 from src.utils.dumps import load_from_json
 
 # ================= 配置区域 =================
-TARGET_DIR = './outputs/trace'  # 目标目录
+TARGET_DIR = './outputs/trace/maldynamic/2025-12-31'  # 目标目录
 OUTPUT_CSV = 'experiment_results.csv'
 
 # 排序规则：列表中的 key 对应 CSV 的列名（或 row_data 的 key）
@@ -71,9 +71,9 @@ def extract_metrics_from_file(file_path: str) -> Dict[str, Any]:
                 
                 # 提取各项数值
                 metrics_storage["acc"].append(m_tree.get("micro.p", 0.0))
-                metrics_storage["macro_p"].append(m_tree.get("macro.p", 0.0))
-                metrics_storage["macro_r"].append(m_tree.get("macro.r", 0.0))
-                metrics_storage["macro_f1"].append(m_tree.get("macro.f1", 0.0))
+                metrics_storage["macro_p"].append(m_tree.get("micro.p", 0.0))
+                metrics_storage["macro_r"].append(m_tree.get("micro.r", 0.0))
+                metrics_storage["macro_f1"].append(m_tree.get("micro.f1", 0.0))
                 
                 # 提取 samples_f1 (假设它在每个 epoch 的 metric 对象里)
                 # 如果 json 里层级是 "samples": {"f1": 99}, 则可以用 "samples.f1"

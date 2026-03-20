@@ -1,6 +1,6 @@
 from src.utils.logx import logger
 from src.utils.dumps import dump_to_json, load_from_json
-from src.utils.text_preprocessing import dedup_preprocess
+from src.utils.text_preprocessing import dedup_preprocess, identity_preprocess
 from src.schemas.context import ExpContext, DataConfig
 from src.utils.text_preprocessing import build_vocab
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -30,7 +30,8 @@ class MalDynamic(Dataset):
             vocab: Dict[str, int], 
             max_len: int = 200
         ):
-        """ 数据来源
+        """ 数据来源: https://www.kaggle.com/datasets/marcuscarpenter97/api-calls-generated-by-dynamic-malware-analysis/
+        
             api_sequences: API 调用序列列表，每个元素是 List[str]
             labels: 标签列表，每个元素是 0/1 的 List[int] (长度15)
             vocab: 词表
@@ -50,7 +51,9 @@ class MalDynamic(Dataset):
 
     def __getitem__(self, idx):
         # 获取原始数据
-        tokens = dedup_preprocess(self.api_sequences[idx]) 
+        # tokens = dedup_preprocess(self.api_sequences[idx]) 
+        tokens = identity_preprocess(self.api_sequences[idx]) 
+        
         label_vec = self.labels[idx]
         
         # (Token -> ID)
