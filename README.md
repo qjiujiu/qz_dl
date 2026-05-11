@@ -1,6 +1,6 @@
-# qz_dl — 恶意软件 API 调用序列分类与对抗训练
+# 恶意软件 API 调用序列分类与对抗训练
 
-基于 API 调用序列的恶意软件分类研究项目，支持多种深度学习模型架构、可插拔注意力机制模块以及**隐空间对抗训练 (Latent Adversarial Training)**。
+基于 API 调用序列的恶意软件分类研究项目，支持多种深度学习模型架构、可插拔注意力机制模块以及隐空间对抗训练 (Latent Adversarial Training)。
 
 ## 项目结构
 
@@ -26,11 +26,9 @@ qz_dl/
 
 | 模型             | 描述                                          |
 | ---------------- | --------------------------------------------- |
-| **LSTM**   | 基于 LSTM 的序列分类器                        |
+| **BiLSTM**   | 基于 LSTM 的序列分类器                        |
 | **TCN**    | 时序卷积网络 (Temporal Convolutional Network) |
-| **Conv1D** | 一维卷积文本分类器                            |
-| **Conv2D** | 序列转图像二维卷积分类器                      |
-| **BERT**   | 基于 Transformer 的预训练微调分类器           |
+| **TextCNN** | 一维卷积文本分类器                            |
 
 ## 可插拔模块
 
@@ -59,26 +57,6 @@ qz_dl/
 - **FGM** — Fast Gradient Method 攻击
 - **Free-AT** — 在每个 batch 内同时更新扰动和模型参数
 
-对抗训练支持单标签和多标签两种场景。
-
-## 快速开始
-
-```bash
-# 标准训练 (以 LSTM + 8分类为例)
-python train_8c.py -c lstm
-
-# 对抗训练
-python train_8c_adv.py -c lstm --adv-type PGD --epsilon 0.01 --steps 7
-
-# 二分类训练
-python train_2c.py -c lstm
-
-# 多标签训练
-python train_mc.py -c lstm
-```
-
-所有训练入口均通过 `-c` 参数指定 `src/configs/` 下的配置模块名，通过 `-n` 参数指定配置变量名（默认 `ctx`）。
-
 ## 依赖
 
-主要依赖 PyTorch，具体版本见 `requirements.txt`。可选依赖：`sentence-transformers` / `transformers`（BERT 相关实验）。
+主要依赖 PyTorch，具体版本见 `requirements.txt`。
